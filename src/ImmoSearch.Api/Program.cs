@@ -2,6 +2,7 @@ using ImmoSearch.Domain.Pagination;
 using ImmoSearch.Domain.Repositories;
 using ImmoSearch.Infrastructure;
 using ImmoSearch.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -39,6 +40,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ImmoContext>();
     db.Database.EnsureCreated();
+    db.Database.Migrate();
 }
 
 app.Run();

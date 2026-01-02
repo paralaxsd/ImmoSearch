@@ -54,7 +54,7 @@ public class ListingRepository(ImmoContext dbContext) : IListingRepository
 
         if (incoming.Count == 0)
         {
-            return Array.Empty<Listing>();
+            return [];
         }
 
         var keyList = incoming
@@ -62,29 +62,44 @@ public class ListingRepository(ImmoContext dbContext) : IListingRepository
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        var existingKeys = await _dbContext.Listings
-            .AsNoTracking()
+        var existing = await _dbContext.Listings
             .Where(l => keyList.Contains(l.Source + "|" + l.ExternalId))
-            .Select(l => l.Source + "|" + l.ExternalId)
             .ToListAsync(cancellationToken);
 
-        var existingSet = new HashSet<string>(existingKeys, StringComparer.OrdinalIgnoreCase);
+        var existingMap = existing.ToDictionary(x => x.Source + "|" + x.ExternalId, StringComparer.OrdinalIgnoreCase);
+        var now = DateTimeOffset.UtcNow;
+        var newListings = new List<Listing>();
 
-        var newListings = incoming
-            .Where(l => !existingSet.Contains(l.Source + "|" + l.ExternalId))
-            .Select(l =>
-            {
-                l.ScrapedAt = l.ScrapedAt == default ? DateTimeOffset.UtcNow : l.ScrapedAt;
-                return l;
-            })
-            .ToList();
-
-        if (newListings.Count == 0)
+        foreach (var item in incoming)
         {
-            return Array.Empty<Listing>();
+            var key = item.Source + "|" + item.ExternalId;
+            if (existingMap.TryGetValue(key, out var found))
+            {
+                found.LastSeenAt = now;
+                found.ScrapedAt = now;
+                found.Title = item.Title;
+                found.Price = item.Price;
+                found.Size = item.Size;
+                found.Rooms = item.Rooms;
+                found.City = item.City;
+                found.Address = item.Address;
+                found.Url = item.Url;
+                found.PublishedAt = item.PublishedAt ?? found.PublishedAt;
+            }
+            else
+            {
+                item.FirstSeenAt = item.FirstSeenAt == default ? now : item.FirstSeenAt;
+                item.LastSeenAt = item.LastSeenAt == default ? now : item.LastSeenAt;
+                item.ScrapedAt = item.ScrapedAt == default ? now : item.ScrapedAt;
+                newListings.Add(item);
+            }
         }
 
-        _dbContext.Listings.AddRange(newListings);
+        if (newListings.Count > 0)
+        {
+            _dbContext.Listings.AddRange(newListings);
+        }
+
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return newListings;

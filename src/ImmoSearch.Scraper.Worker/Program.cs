@@ -1,5 +1,6 @@
 using ImmoSearch.Infrastructure;
 using ImmoSearch.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 using ImmoSearch.Scraper.Worker;
 using ImmoSearch.Scraper.Worker.Scraping;
 using ImmoSearch.Scraper.Worker.Scraping.Options;
@@ -22,6 +23,7 @@ using (var scope = host.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ImmoContext>();
     db.Database.EnsureCreated();
+    db.Database.Migrate();
 }
 
 host.Run();

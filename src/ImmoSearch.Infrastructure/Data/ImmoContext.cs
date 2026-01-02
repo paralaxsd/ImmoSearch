@@ -29,6 +29,10 @@ public class ImmoContext(DbContextOptions<ImmoContext> options) : DbContext(opti
                     v => string.IsNullOrEmpty(v) ? null : DateTimeOffset.Parse(v!, CultureInfo.InvariantCulture));
             entity.Property(x => x.ScrapedAt)
                 .HasConversion(v => v.ToString("O"), v => DateTimeOffset.Parse(v, CultureInfo.InvariantCulture));
+            entity.Property(x => x.FirstSeenAt)
+                .HasConversion(v => v.ToString("O"), v => DateTimeOffset.Parse(v, CultureInfo.InvariantCulture));
+            entity.Property(x => x.LastSeenAt)
+                .HasConversion(v => v.ToString("O"), v => DateTimeOffset.Parse(v, CultureInfo.InvariantCulture));
 
             entity.HasIndex(x => new { x.Source, x.ExternalId }).IsUnique();
             entity.HasIndex(x => x.Hash);

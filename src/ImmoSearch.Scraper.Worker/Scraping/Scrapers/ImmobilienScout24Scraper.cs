@@ -71,6 +71,7 @@ public sealed class ImmobilienScout24Scraper(
                 Address = address,
                 Price = hit.PrimaryPrice,
                 Size = hit.PrimaryArea,
+                Rooms = hit.NumberOfRooms,
                 Url = url,
                 PublishedAt = published,
                 ScrapedAt = DateTimeOffset.UtcNow,
@@ -148,6 +149,7 @@ public sealed class ImmobilienScout24Scraper(
         [property: JsonPropertyName("headline")] string? Headline,
         [property: JsonPropertyName("primaryPrice")] decimal? PrimaryPrice,
         [property: JsonPropertyName("primaryArea")] decimal? PrimaryArea,
+        [property: JsonPropertyName("numberOfRooms")] decimal? NumberOfRooms,
         [property: JsonPropertyName("addressString")] string? AddressString,
         [property: JsonPropertyName("dateCreated")] string? DateCreated,
         [property: JsonPropertyName("links")] Links? Links);

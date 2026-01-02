@@ -28,6 +28,9 @@ else if (_result is not null)
                 <th>City</th>
                 <th>Price</th>
                 <th>Size</th>
+                    <th>Rooms</th>
+                    <th>First seen</th>
+                    <th>Last seen</th>
                 <th>Source</th>
                 <th>Link</th>
             </tr>
@@ -40,6 +43,9 @@ else if (_result is not null)
                 <td>@item.City</td>
                 <td>@(item.Price.HasValue ? item.Price.Value.ToString("C0") : "–")</td>
                 <td>@(item.Size.HasValue ? $"{item.Size:F0} m²" : "–")</td>
+                    <td>@(item.Rooms.HasValue ? $"{item.Rooms:F1}" : "–")</td>
+                    <td>@item.FirstSeenAt.ToString("yyyy-MM-dd")</td>
+                    <td>@item.LastSeenAt.ToString("yyyy-MM-dd")</td>
                 <td>@item.Source</td>
                 <td><a href="@item.Url" target="_blank">Open</a></td>
             </tr>
