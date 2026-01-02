@@ -1,0 +1,16 @@
+.nav-menu {
+    padding-top: 1rem;
+}
+
+.nav-menu .nav-link {
+    color: #212529;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+}
+
+.nav-menu .nav-link.active {
+    font-weight: 600;
+    color: #0d6efd;
+}
