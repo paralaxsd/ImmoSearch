@@ -40,7 +40,6 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ImmoContext>();
     db.Database.EnsureCreated();
-    db.Database.Migrate();
 }
 
 app.Run();

@@ -24,6 +24,7 @@ else if (_result is not null)
     <table class="table table-striped">
         <thead>
             <tr>
+                    <th></th>
                 <th>Title</th>
                 <th>City</th>
                 <th>Price</th>
@@ -39,6 +40,12 @@ else if (_result is not null)
         @foreach (var item in _result.Items)
         {
             <tr>
+                <td style="width: 110px;">
+                    @if (!string.IsNullOrWhiteSpace(item.ThumbnailUrl))
+                    {
+                        <img src="@item.ThumbnailUrl" alt="thumb" style="max-width: 100px; max-height: 75px; object-fit: cover;" />
+                    }
+                </td>
                 <td>@item.Title</td>
                 <td>@item.City</td>
                 <td>@(item.Price.HasValue ? item.Price.Value.ToString("C0") : "–")</td>

@@ -22,6 +22,7 @@ public class ImmoContext(DbContextOptions<ImmoContext> options) : DbContext(opti
             entity.Property(x => x.Title).IsRequired().HasMaxLength(500);
             entity.Property(x => x.City).HasMaxLength(200);
             entity.Property(x => x.Address).HasMaxLength(500);
+            entity.Property(x => x.ThumbnailUrl).HasMaxLength(1000);
             entity.Property(x => x.Url).IsRequired().HasMaxLength(1000);
             entity.Property(x => x.Hash).IsRequired().HasMaxLength(200);
             entity.Property(x => x.PublishedAt)

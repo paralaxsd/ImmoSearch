@@ -26,6 +26,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{432F
 		.github\copilot-instructions.md = .github\copilot-instructions.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".config", ".config", "{913678B9-9958-4E6C-9C8A-D0D1C729DF0E}"
+	ProjectSection(SolutionItems) = preProject
+		.config\dotnet-tools.json = .config\dotnet-tools.json
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -107,6 +112,7 @@ Global
 		{74209A14-0800-4400-B65B-1A35A32B72D6} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{B5469406-2F14-4EBB-91CD-7E7C3CA55371} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{432F0E49-8A01-4753-9DE4-D27BEF6F23F6} = {EE89C279-74DE-41CE-A65C-0BB822D13D1C}
+		{913678B9-9958-4E6C-9C8A-D0D1C729DF0E} = {EE89C279-74DE-41CE-A65C-0BB822D13D1C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {830A8552-C80E-4B1E-862A-B3628827A50B}

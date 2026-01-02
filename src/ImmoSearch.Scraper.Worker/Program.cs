@@ -23,7 +23,6 @@ using (var scope = host.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<ImmoContext>();
     db.Database.EnsureCreated();
-    db.Database.Migrate();
 }
 
 host.Run();

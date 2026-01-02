@@ -55,6 +55,7 @@ public sealed class ImmobilienScout24Scraper(
             if (string.IsNullOrWhiteSpace(hit.ExposeId)) continue;
             var externalId = hit.ExposeId!;
             var url = hit.Links?.AbsoluteUrl ?? string.Empty;
+            var thumb = hit.PrimaryPictureImageProps?.Src;
             if (string.IsNullOrWhiteSpace(url)) url = $"{_options.BaseUrl.TrimEnd('/')}/expose/{externalId}";
 
             var title = string.IsNullOrWhiteSpace(hit.Headline) ? externalId : hit.Headline!.Trim();
@@ -72,6 +73,7 @@ public sealed class ImmobilienScout24Scraper(
                 Price = hit.PrimaryPrice,
                 Size = hit.PrimaryArea,
                 Rooms = hit.NumberOfRooms,
+                ThumbnailUrl = thumb,
                 Url = url,
                 PublishedAt = published,
                 ScrapedAt = DateTimeOffset.UtcNow,
@@ -152,7 +154,9 @@ public sealed class ImmobilienScout24Scraper(
         [property: JsonPropertyName("numberOfRooms")] decimal? NumberOfRooms,
         [property: JsonPropertyName("addressString")] string? AddressString,
         [property: JsonPropertyName("dateCreated")] string? DateCreated,
-        [property: JsonPropertyName("links")] Links? Links);
+        [property: JsonPropertyName("links")] Links? Links,
+        [property: JsonPropertyName("primaryPictureImageProps")] ImageProps? PrimaryPictureImageProps);
 
     sealed record Links([property: JsonPropertyName("absoluteURL")] string? AbsoluteUrl);
+    sealed record ImageProps([property: JsonPropertyName("src")] string? Src);
 }
