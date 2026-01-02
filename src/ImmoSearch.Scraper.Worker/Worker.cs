@@ -1,5 +1,4 @@
-using ImmoSearch.Domain.Models;
-using ImmoSearch.Domain.Repositories;
+using ImmoSearch.Scraper.Worker.Scraping;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
@@ -7,12 +6,10 @@ namespace ImmoSearch.Scraper.Worker;
 
 public sealed class Worker(
     ILogger<Worker> logger,
-    IHttpClientFactory httpClientFactory,
     IOptionsMonitor<ScrapingOptions> options,
     IServiceScopeFactory scopeFactory) : BackgroundService
 {
     private readonly ILogger<Worker> _logger = logger;
-    private readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
     private readonly IOptionsMonitor<ScrapingOptions> _options = options;
     private readonly IServiceScopeFactory _scopeFactory = scopeFactory;
 
@@ -25,10 +22,9 @@ public sealed class Worker(
             try
             {
                 using var scope = _scopeFactory.CreateAsyncScope();
-                var repository = scope.ServiceProvider.GetRequiredService<IListingRepository>();
+                var orchestrator = scope.ServiceProvider.GetRequiredService<ScraperOrchestrator>();
 
-                var listings = await ScrapeAsync(stoppingToken);
-                var inserted = await repository.AddNewAsync(listings, stoppingToken);
+                var inserted = await orchestrator.RunOnce(stoppingToken);
                 _logger.LogInformation("Scrape cycle complete. New listings saved: {Count}", inserted.Count);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -49,29 +45,5 @@ public sealed class Worker(
                 // stopping
             }
         }
-    }
-
-    private Task<IReadOnlyList<Listing>> ScrapeAsync(CancellationToken cancellationToken)
-    {
-        // TODO: replace with real scraping logic using _httpClientFactory
-        var now = DateTimeOffset.UtcNow;
-        IReadOnlyList<Listing> sample = new[]
-        {
-            new Listing
-            {
-                Source = "sample",
-                ExternalId = $"demo-{now.ToUnixTimeSeconds()}",
-                Title = "Demo Listing",
-                City = "Sample City",
-                Price = 1200,
-                Size = 55,
-                Url = "https://example.com/listing/demo",
-                PublishedAt = now,
-                ScrapedAt = now,
-                Hash = $"sample|demo-{now.ToUnixTimeSeconds()}"
-            }
-        };
-
-        return Task.FromResult(sample);
     }
 }
