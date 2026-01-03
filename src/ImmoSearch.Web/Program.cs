@@ -1,6 +1,11 @@
+using System.Globalization;
 using ImmoSearch.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var culture = CultureInfo.GetCultureInfo("de-AT");
+CultureInfo.DefaultThreadCurrentCulture = culture;
+CultureInfo.DefaultThreadCurrentUICulture = culture;
 
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();

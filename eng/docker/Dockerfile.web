@@ -1,0 +1,13 @@
+# Build and publish ImmoSearch.Web (Blazor Server)
+FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0 AS build
+WORKDIR /src
+COPY ./ImmoSearch.sln ./
+COPY ./src ./src
+RUN dotnet restore ImmoSearch.sln
+RUN dotnet publish src/ImmoSearch.Web/ImmoSearch.Web.csproj -c Release -o /app/publish /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0 AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+ENV ASPNETCORE_URLS=http://+:8081
+ENTRYPOINT ["dotnet", "ImmoSearch.Web.dll"]

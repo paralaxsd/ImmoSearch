@@ -1,0 +1,32 @@
+name: immosearch
+
+services:
+  api:
+    image: immosearch.api
+    container_name: immosearch-api
+    build:
+      context: ../..
+      dockerfile: eng/docker/Dockerfile.api
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__DefaultConnection: Data Source=/data/immo.db
+      Admin__Token: ${ADMIN_TOKEN:-}
+    volumes:
+      - ${DATA_DIR:-../../assets/docker}/data:/data
+    ports:
+      - "8080:8080"
+  web:
+    image: immosearch.web
+    container_name: immosearch-web
+    build:
+      context: ../..
+      dockerfile: eng/docker/Dockerfile.web
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:8081
+      ApiBaseUrl: http://api:8080
+    depends_on:
+      - api
+    ports:
+      - "8081:8081"

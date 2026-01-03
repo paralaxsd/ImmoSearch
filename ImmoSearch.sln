@@ -29,6 +29,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".config", ".config", "{9136
 		.config\dotnet-tools.json = .config\dotnet-tools.json
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "eng", "eng", "{ADFA6436-EA08-4154-B2AE-06455E1FA1A1}"
+	ProjectSection(SolutionItems) = preProject
+		eng\build_docker_container.ps1 = eng\build_docker_container.ps1
+		eng\relaunch_docker_container.ps1 = eng\relaunch_docker_container.ps1
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{65571E1C-2DFB-49E2-BE9B-17763D240583}"
+	ProjectSection(SolutionItems) = preProject
+		eng\docker\docker-compose.yml = eng\docker\docker-compose.yml
+		eng\docker\Dockerfile.api = eng\docker\Dockerfile.api
+		eng\docker\Dockerfile.web = eng\docker\Dockerfile.web
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -98,6 +111,8 @@ Global
 		{B5469406-2F14-4EBB-91CD-7E7C3CA55371} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{432F0E49-8A01-4753-9DE4-D27BEF6F23F6} = {EE89C279-74DE-41CE-A65C-0BB822D13D1C}
 		{913678B9-9958-4E6C-9C8A-D0D1C729DF0E} = {EE89C279-74DE-41CE-A65C-0BB822D13D1C}
+		{ADFA6436-EA08-4154-B2AE-06455E1FA1A1} = {EE89C279-74DE-41CE-A65C-0BB822D13D1C}
+		{65571E1C-2DFB-49E2-BE9B-17763D240583} = {ADFA6436-EA08-4154-B2AE-06455E1FA1A1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {830A8552-C80E-4B1E-862A-B3628827A50B}

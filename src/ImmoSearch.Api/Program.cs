@@ -27,11 +27,8 @@ builder.Services.AddHostedService<ScrapeHostedService>();
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.MapOpenApi();
-    app.MapScalarApiReference(options => options.Title = "ImmoSearch API");
-}
+app.MapOpenApi();
+app.MapScalarApiReference(options => options.Title = "ImmoSearch API");
 
 app.UseHttpsRedirection();
 
