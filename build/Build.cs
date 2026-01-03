@@ -42,6 +42,7 @@ sealed class Build : NukeBuild
         .DependsOn(Restore)
         .Executes(CompileAll);
 
+    [UsedImplicitly]
     Target DockerRelaunch => x => x
         .Description("Relaunch docker compose with optional AdminToken/DataDir/Build")
         .Executes(RelaunchDocker);
@@ -51,6 +52,8 @@ sealed class Build : NukeBuild
      * ***************************************************************************************/
     void CleanAll()
     {
+        DotNetClean();
+
         RootDirectory.GlobDirectories("bin", "tmp").ForEach(p => p.DeleteDirectory());
         SourceDir.GlobDirectories("**/bin", "**/tmp", "**/obj").ForEach(p => p.DeleteDirectory());
         ArtifactsDir.CreateOrCleanDirectory();
