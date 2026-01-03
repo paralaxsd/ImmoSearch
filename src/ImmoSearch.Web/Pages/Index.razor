@@ -21,69 +21,80 @@ else if (_result?.Items?.Count == 0)
 }
 else if (_result is not null)
 {
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                    <th></th>
-                <th>Title</th>
-                <th>City</th>
-                <th>Price</th>
-                <th>Size</th>
-                    <th>Rooms</th>
-                    <th>First seen</th>
-                    <th>Last seen</th>
-                <th>Source</th>
-                <th>Link</th>
-            </tr>
-        </thead>
-        <tbody>
-        @foreach (var item in _result.Items)
-        {
-            <tr>
-                <td style="width: 110px;">
-                    @if (!string.IsNullOrWhiteSpace(item.ThumbnailUrl))
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">Listings</h5>
+                <span class="badge bg-light text-dark">@_result.TotalCount total</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 110px;"></th>
+                            <th>Title</th>
+                            <th>City</th>
+                            <th>Price</th>
+                            <th>Size</th>
+                            <th>Rooms</th>
+                            <th>First seen</th>
+                            <th>Last seen</th>
+                            <th>Source</th>
+                            <th>Link</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    @foreach (var item in _result.Items)
                     {
-                        <img src="@item.ThumbnailUrl" alt="thumb" style="max-width: 100px; max-height: 75px; object-fit: cover;" />
+                        <tr>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(item.ThumbnailUrl))
+                                {
+                                    <img src="@item.ThumbnailUrl" alt="thumb" class="img-thumbnail" style="max-width: 100px; max-height: 75px; object-fit: cover;" />
+                                }
+                            </td>
+                            <td>@item.Title</td>
+                            <td>@item.City</td>
+                            <td>@(item.Price.HasValue ? item.Price.Value.ToString("C0") : "–")</td>
+                            <td>@(item.Size.HasValue ? $"{item.Size:F0} m²" : "–")</td>
+                            <td>@(item.Rooms.HasValue ? $"{item.Rooms:F1}" : "–")</td>
+                            <td>@item.FirstSeenAt.ToString("yyyy-MM-dd")</td>
+                            <td>@item.LastSeenAt.ToString("yyyy-MM-dd")</td>
+                            <td>@item.Source</td>
+                            <td><a href="@item.Url" target="_blank">Open</a></td>
+                        </tr>
                     }
-                </td>
-                <td>@item.Title</td>
-                <td>@item.City</td>
-                <td>@(item.Price.HasValue ? item.Price.Value.ToString("C0") : "–")</td>
-                <td>@(item.Size.HasValue ? $"{item.Size:F0} m²" : "–")</td>
-                    <td>@(item.Rooms.HasValue ? $"{item.Rooms:F1}" : "–")</td>
-                    <td>@item.FirstSeenAt.ToString("yyyy-MM-dd")</td>
-                    <td>@item.LastSeenAt.ToString("yyyy-MM-dd")</td>
-                <td>@item.Source</td>
-                <td><a href="@item.Url" target="_blank">Open</a></td>
-            </tr>
-        }
-        </tbody>
-    </table>
-
-    <div class="d-flex justify-content-between align-items-center">
-        <button class="btn btn-outline-secondary" @onclick="Prev" disabled="@(_page <= 1)">Prev</button>
-        <span>@_result.TotalCount total</span>
-        <button class="btn btn-outline-secondary" @onclick="Next" disabled="@(_page >= _totalPages)">Next</button>
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <button class="btn btn-outline-secondary" @onclick="Prev" disabled="@(_page <= 1)">Prev</button>
+                <div class="text-muted">Page @_page / @_totalPages</div>
+                <button class="btn btn-outline-secondary" @onclick="Next" disabled="@(_page >= _totalPages)">Next</button>
+            </div>
+        </div>
     </div>
 }
 
 @code {
-    private readonly int _pageSize = 20;
-    private int _page = 1;
-    private int _totalPages = 1;
-    private bool _loading;
-    private bool _error;
-    private PagedResult<Listing>? _result;
+    int _pageSize = 20;
+    int _page = 1;
+    int _totalPages = 1;
+    bool _loading;
+    bool _error;
+    PagedResult<Listing>? _result;
+    ScrapeSettings? _settings;
 
     [Inject]
     public ListingApiClient ApiClient { get; set; } = default!;
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadSettings();
         await LoadPage(_page);
     }
 
-    private async Task LoadPage(int page)
+    async Task LoadPage(int page)
     {
         _loading = true;
         _error = false;
@@ -113,23 +124,31 @@ else if (_result is not null)
         }
     }
 
-    private Task Refresh() => LoadPage(_page);
-
-    private Task Prev()
+    async Task LoadSettings()
     {
-        if (_page > 1)
+        try
         {
-            return LoadPage(_page - 1);
+            _settings = await ApiClient.GetSettingsAsync();
+            if (_settings is not null && _settings.PageSize > 0)
+                _pageSize = _settings.PageSize;
         }
+        catch
+        {
+            _error = true;
+        }
+    }
+
+    Task Refresh() => LoadPage(_page);
+
+    Task Prev()
+    {
+        if (_page > 1) return LoadPage(_page - 1);
         return Task.CompletedTask;
     }
 
-    private Task Next()
+    Task Next()
     {
-        if (_page < _totalPages)
-        {
-            return LoadPage(_page + 1);
-        }
+        if (_page < _totalPages) return LoadPage(_page + 1);
         return Task.CompletedTask;
     }
 }

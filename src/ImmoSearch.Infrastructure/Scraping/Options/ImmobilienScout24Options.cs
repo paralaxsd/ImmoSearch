@@ -1,4 +1,4 @@
-namespace ImmoSearch.Scraper.Worker.Scraping.Options;
+namespace ImmoSearch.Infrastructure.Scraping.Options;
 
 public class ImmobilienScout24Options
 {

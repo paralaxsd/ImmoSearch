@@ -3,6 +3,7 @@ using System.IO;
 using ImmoSearch.Domain.Repositories;
 using ImmoSearch.Infrastructure.Data;
 using ImmoSearch.Infrastructure.Repositories;
+using ImmoSearch.Infrastructure.Scraping;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -26,6 +27,8 @@ public static class DependencyInjection
 
         services.AddDbContext<ImmoContext>(options => options.UseSqlite(builder.ToString()));
         services.AddScoped<IListingRepository, ListingRepository>();
+        services.AddScoped<IAdminRepository, AdminRepository>();
+        services.AddScoped<IScrapeSettingsProvider, ScrapeSettingsProvider>();
 
         return services;
     }

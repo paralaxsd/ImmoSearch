@@ -7,6 +7,7 @@ namespace ImmoSearch.Infrastructure.Data;
 public class ImmoContext(DbContextOptions<ImmoContext> options) : DbContext(options)
 {
     public DbSet<Listing> Listings => Set<Listing>();
+    public DbSet<ScrapeSettings> ScrapeSettings => Set<ScrapeSettings>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -37,6 +38,16 @@ public class ImmoContext(DbContextOptions<ImmoContext> options) : DbContext(opti
 
             entity.HasIndex(x => new { x.Source, x.ExternalId }).IsUnique();
             entity.HasIndex(x => x.Hash);
+        });
+
+        modelBuilder.Entity<ScrapeSettings>(entity =>
+        {
+            entity.ToTable("ScrapeSettings");
+            entity.HasKey(x => x.Id);
+            entity.Property(x => x.Source).IsRequired().HasMaxLength(100);
+            entity.Property(x => x.ZipCode).HasMaxLength(20);
+            entity.Property(x => x.IntervalSeconds);
+            entity.HasIndex(x => x.Source).IsUnique();
         });
     }
 }

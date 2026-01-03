@@ -1,13 +1,9 @@
 [
   {
-    "Name": "Multi App",
+    "Name": "Web + API",
     "Projects": [
       {
         "Path": "src\\ImmoSearch.Api\\ImmoSearch.Api.csproj",
-        "Action": "Start"
-      },
-      {
-        "Path": "src\\ImmoSearch.Scraper.Worker\\ImmoSearch.Scraper.Worker.csproj",
         "Action": "Start"
       },
       {

@@ -1,5 +1,8 @@
 .nav-menu {
     padding-top: 1rem;
+    background: #f8f9fa;
+    border-right: 1px solid #e5e7eb;
+    min-height: 100vh;
 }
 
 .nav-menu .nav-link {
@@ -8,9 +11,16 @@
     gap: 0.5rem;
     align-items: center;
     padding: 0.5rem 0.75rem;
+    border-radius: 0.35rem;
 }
 
 .nav-menu .nav-link.active {
     font-weight: 600;
     color: #0d6efd;
+    background-color: rgba(13, 110, 253, 0.08);
+}
+
+.nav-menu .nav-link:hover {
+    background-color: #eef2f7;
+    text-decoration: none;
 }

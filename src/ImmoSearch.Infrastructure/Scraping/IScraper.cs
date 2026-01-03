@@ -1,6 +1,6 @@
 using ImmoSearch.Domain.Models;
 
-namespace ImmoSearch.Scraper.Worker.Scraping;
+namespace ImmoSearch.Infrastructure.Scraping;
 
 public interface IScraper
 {

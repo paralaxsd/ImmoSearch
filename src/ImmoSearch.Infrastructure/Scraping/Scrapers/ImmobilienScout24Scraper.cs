@@ -1,16 +1,17 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ImmoSearch.Domain.Models;
-using ImmoSearch.Scraper.Worker.Scraping.Options;
+using ImmoSearch.Infrastructure.Scraping.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace ImmoSearch.Scraper.Worker.Scraping.Scrapers;
+namespace ImmoSearch.Infrastructure.Scraping.Scrapers;
 
 public sealed class ImmobilienScout24Scraper(
     ILogger<ImmobilienScout24Scraper> logger,
     IHttpClientFactory httpClientFactory,
-    IOptions<ImmobilienScout24Options> options) : IScraper
+    IScrapeSettingsProvider settingsProvider,
+    IOptions<ImmobilienScout24Options> defaults) : IScraper
 {
     static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -25,14 +26,22 @@ public sealed class ImmobilienScout24Scraper(
 
     readonly ILogger<ImmobilienScout24Scraper> _logger = logger;
     readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
-    readonly ImmobilienScout24Options _options = options.Value;
+    readonly IScrapeSettingsProvider _settingsProvider = settingsProvider;
+    readonly ImmobilienScout24Options _defaults = defaults.Value;
 
     public string Source => "immoscout24_at";
 
     public async Task<IReadOnlyList<Listing>> ScrapeAsync(CancellationToken cancellationToken)
     {
         var listings = new List<Listing>();
-        var requestUri = BuildGraphQlRequestUri();
+        var options = await _settingsProvider.GetAsync(cancellationToken);
+        if (options is null)
+        {
+            _logger.LogInformation("{Source}: no scrape settings stored, skipping", Source);
+            return listings;
+        }
+
+        var requestUri = BuildGraphQlRequestUri(options);
 
         var client = _httpClientFactory.CreateClient();
         client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
@@ -55,8 +64,8 @@ public sealed class ImmobilienScout24Scraper(
             if (string.IsNullOrWhiteSpace(hit.ExposeId)) continue;
             var externalId = hit.ExposeId!;
             var url = hit.Links?.AbsoluteUrl ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(url)) url = $"{options.BaseUrl.TrimEnd('/')}/expose/{externalId}";
             var thumb = hit.PrimaryPictureImageProps?.Src;
-            if (string.IsNullOrWhiteSpace(url)) url = $"{_options.BaseUrl.TrimEnd('/')}/expose/{externalId}";
 
             var title = string.IsNullOrWhiteSpace(hit.Headline) ? externalId : hit.Headline!.Trim();
             var address = hit.AddressString?.Trim();
@@ -85,16 +94,16 @@ public sealed class ImmobilienScout24Scraper(
         return listings;
     }
 
-    string BuildGraphQlRequestUri()
+    string BuildGraphQlRequestUri(ImmobilienScout24Options options)
     {
-        var urlPath = BuildListingUrlPath();
+        var urlPath = BuildListingUrlPath(options);
         var variables = new Dictionary<string, object?>
         {
             ["aspectRatio"] = 1.77,
             ["params"] = new Dictionary<string, object?>
             {
                 ["URL"] = urlPath,
-                ["size"] = _options.PageSize
+                ["size"] = options.PageSize
             }
         };
 
@@ -110,22 +119,22 @@ public sealed class ImmobilienScout24Scraper(
         var variablesParam = Uri.EscapeDataString(JsonSerializer.Serialize(variables, RawJsonOptions));
         var extensionsParam = Uri.EscapeDataString(JsonSerializer.Serialize(extensions, RawJsonOptions));
 
-        return $"{_options.BaseUrl.TrimEnd('/')}/portal/graphql?operationName=getDataByURL&variables={variablesParam}&extensions={extensionsParam}";
+        return $"{options.BaseUrl.TrimEnd('/')}/portal/graphql?operationName=getDataByURL&variables={variablesParam}&extensions={extensionsParam}";
     }
 
-    string BuildListingUrlPath()
+    string BuildListingUrlPath(ImmobilienScout24Options options)
     {
         var query = new List<string>
         {
-            $"primaryAreaFrom={_options.PrimaryAreaFrom}",
-            $"primaryAreaTo={_options.PrimaryAreaTo}"
+            $"primaryAreaFrom={options.PrimaryAreaFrom}",
+            $"primaryAreaTo={options.PrimaryAreaTo}"
         };
 
-        if (_options.PrimaryPriceFrom > 0) query.Add($"primaryPriceFrom={_options.PrimaryPriceFrom}");
-        if (_options.PrimaryPriceTo > 0) query.Add($"primaryPriceTo={_options.PrimaryPriceTo}");
+        if (options.PrimaryPriceFrom > 0) query.Add($"primaryPriceFrom={options.PrimaryPriceFrom}");
+        if (options.PrimaryPriceTo > 0) query.Add($"primaryPriceTo={options.PrimaryPriceTo}");
 
         var qs = string.Join("&", query);
-        return $"/regional/{_options.ZipCode}/immobilie-kaufen?{qs}";
+        return $"/regional/{options.ZipCode}/immobilie-kaufen?{qs}";
     }
 
     static string? ExtractCity(string? address)

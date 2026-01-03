@@ -1,6 +1,7 @@
 using ImmoSearch.Domain.Repositories;
+using Microsoft.Extensions.Logging;
 
-namespace ImmoSearch.Scraper.Worker.Scraping;
+namespace ImmoSearch.Infrastructure.Scraping;
 
 public sealed class ScraperOrchestrator(
     ILogger<ScraperOrchestrator> logger,
@@ -11,7 +12,7 @@ public sealed class ScraperOrchestrator(
     readonly IListingRepository _repository = repository;
     readonly IReadOnlyList<IScraper> _scrapers = scrapers.ToList();
 
-    public async Task<IReadOnlyList<string>> RunOnce(CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<string>> RunOnceAsync(CancellationToken cancellationToken)
     {
         var aggregated = new List<Domain.Models.Listing>();
         foreach (var scraper in _scrapers)
@@ -28,10 +29,7 @@ public sealed class ScraperOrchestrator(
             }
         }
 
-        if (aggregated.Count == 0)
-        {
-            return [];
-        }
+        if (aggregated.Count == 0) return [];
 
         var inserted = await _repository.AddNewAsync(aggregated, cancellationToken);
         return inserted.Select(x => x.ExternalId).ToArray();

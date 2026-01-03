@@ -1,0 +1,195 @@
+@page "/admin"
+
+<h1>Admin</h1>
+<div class="alert alert-info small">Admin-Aktionen erfordern (falls gesetzt) das Admin-Token. Listings bleiben öffentlich.</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+            <h5 class="mb-0">Scrape settings</h5>
+            <span class="badge bg-secondary ms-2">Admin</span>
+        </div>
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-3">
+                <label class="form-label">ZIP</label>
+                <input class="form-control" @bind="_settings.ZipCode" disabled="@(!CanEdit)" />
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">Area from</label>
+                <input class="form-control" type="number" @bind="_settings.PrimaryAreaFrom" disabled="@(!CanEdit)" />
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">Area to</label>
+                <input class="form-control" type="number" @bind="_settings.PrimaryAreaTo" disabled="@(!CanEdit)" />
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">Page size</label>
+                <input class="form-control" type="number" @bind="_settings.PageSize" disabled="@(!CanEdit)" />
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">Interval (seconds)</label>
+                <input class="form-control" type="number" @bind="_settings.IntervalSeconds" disabled="@(!CanEdit)" />
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">Price from</label>
+                <input class="form-control" type="number" @bind="_settings.PrimaryPriceFrom" disabled="@(!CanEdit)" />
+            </div>
+            <div class="col-6 col-md-3">
+                <label class="form-label">Price to</label>
+                <input class="form-control" type="number" @bind="_settings.PrimaryPriceTo" disabled="@(!CanEdit)" />
+            </div>
+            <div class="col-12 col-md-4">
+                <label class="form-label">Admin token</label>
+                <div class="d-flex gap-2">
+                    <input class="form-control" type="password" @bind="_adminToken" @bind:event="oninput" />
+                    <button class="btn btn-outline-primary" title="Lädt die aktuellen Einstellungen aus dem Backend (z.B. nach Fremdänderung)." @onclick="LoadSettings" disabled="@_busy">Reload</button>
+                </div>
+                <div class="form-text text-muted">Pflicht, falls in appsettings (Admin:Token) hinterlegt.</div>
+            </div>
+        </div>
+        <div class="mt-3 d-flex gap-2 flex-wrap">
+            <button class="btn btn-success" @onclick="SaveSettings" disabled="@Disabled">Save settings</button>
+            <button class="btn btn-warning" @onclick="TriggerScrape" disabled="@Disabled">Scrape now</button>
+            <button class="btn btn-danger" @onclick="DeleteListings" disabled="@Disabled">Reset listings</button>
+            <button class="btn btn-outline-secondary" @onclick="ResetSettings" disabled="@Disabled">Reset settings</button>
+            @if (!string.IsNullOrWhiteSpace(_status))
+            {
+                <span class="text-muted align-self-center">@_status</span>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    ScrapeSettings _settings = new();
+    string _adminToken = string.Empty;
+    string _status = string.Empty;
+    bool _busy;
+    bool _requiresToken;
+
+    bool Disabled => _busy || (_requiresToken && string.IsNullOrWhiteSpace(_adminToken));
+    bool CanEdit => !_requiresToken || !string.IsNullOrWhiteSpace(_adminToken);
+
+    [Inject]
+    public ListingApiClient ApiClient { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadStatus();
+        await LoadSettings();
+    }
+
+    async Task LoadSettings()
+    {
+        try
+        {
+            ApiClient.AdminToken = _adminToken;
+            var settings = await ApiClient.GetSettingsAsync();
+            if (settings is not null) _settings = settings;
+            _status = string.Empty;
+        }
+        catch
+        {
+            _status = "Loading settings failed.";
+        }
+    }
+
+    async Task LoadStatus()
+    {
+        try
+        {
+            var status = await ApiClient.GetAdminStatusAsync();
+            if (status is not null) _requiresToken = status.RequiresToken;
+        }
+        catch
+        {
+            _requiresToken = false;
+        }
+    }
+
+    async Task SaveSettings()
+    {
+        if (!ValidateRanges()) return;
+
+        await RunAdmin(async () =>
+        {
+            var saved = await ApiClient.UpsertSettingsAsync(_settings);
+            if (saved is not null) _settings = saved;
+            _status = "Saved.";
+        });
+    }
+
+    async Task TriggerScrape()
+    {
+        await RunAdmin(async () =>
+        {
+            var result = await ApiClient.TriggerScrapeAsync();
+            if (result is null)
+            {
+                _status = "Scrape failed.";
+                return;
+            }
+
+            _status = result.MissingSettings ? "Scrape skipped: no settings." : "Scrape triggered.";
+        });
+    }
+
+    async Task DeleteListings()
+    {
+        await RunAdmin(async () =>
+        {
+            var ok = await ApiClient.DeleteListingsAsync();
+            _status = ok ? "Listings reset." : "Reset failed.";
+        });
+    }
+
+    async Task ResetSettings()
+    {
+        await RunAdmin(async () =>
+        {
+            var ok = await ApiClient.DeleteSettingsAsync();
+            if (ok) _settings = new();
+            _status = ok ? "Settings reset." : "Reset failed.";
+        });
+    }
+
+    bool ValidateRanges()
+    {
+        if (_settings.PrimaryPriceFrom is > 0 && _settings.PrimaryPriceTo is > 0 && _settings.PrimaryPriceFrom > _settings.PrimaryPriceTo)
+        {
+            _status = "Price from must be <= price to.";
+            return false;
+        }
+
+        if (_settings.PrimaryAreaFrom is > 0 && _settings.PrimaryAreaTo is > 0 && _settings.PrimaryAreaFrom > _settings.PrimaryAreaTo)
+        {
+            _status = "Area from must be <= area to.";
+            return false;
+        }
+
+        _status = string.Empty;
+        return true;
+    }
+
+    async Task RunAdmin(Func<Task> action)
+    {
+        _busy = true;
+        ApiClient.AdminToken = _adminToken;
+        try
+        {
+            await action();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            _status = "Unauthorized: Token prüfen.";
+        }
+        catch
+        {
+            _status = "Action failed.";
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}
