@@ -2,6 +2,7 @@
 FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0 AS build
 WORKDIR /src
 COPY ./ImmoSearch.sln ./
+COPY ./Directory.Build.props ./
 COPY ./src ./src
 RUN dotnet restore ImmoSearch.sln
 RUN dotnet publish src/ImmoSearch.Api/ImmoSearch.Api.csproj -c Release -o /app/publish /p:UseAppHost=false
