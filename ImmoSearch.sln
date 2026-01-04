@@ -20,6 +20,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0 Solution Items", "0 Solut
 		build.ps1 = build.ps1
 		build.sh = build.sh
 		ImmoSearch.slnLaunch = ImmoSearch.slnLaunch
+		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{432F0E49-8A01-4753-9DE4-D27BEF6F23F6}"
