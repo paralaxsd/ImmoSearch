@@ -3,7 +3,20 @@ FROM mcr.microsoft.com/dotnet/nightly/sdk:10.0 AS build
 WORKDIR /src
 COPY ./ImmoSearch.sln ./
 COPY ./Directory.Build.props ./
+COPY ./eng/ThisAssemblyExtensions.props ./eng/ThisAssemblyExtensions.props
+COPY ./.git ./.git
 COPY ./src ./src
+# Normalize .git if it's a file pointing outside the build context (worktree clones)
+RUN if [ -f .git ] && grep -q 'gitdir:' .git; then \
+      gitdir=$(sed 's/gitdir: //g' .git); \
+      mkdir -p /tmp/gitdir && cp -r "$gitdir"/. /tmp/gitdir && rm .git && mv /tmp/gitdir .git; \
+    fi
+# Ensure git is available, drop alternates, and fetch history for git-based versioning
+RUN apt-get update && apt-get install -y git \
+    && if [ -f .git/objects/info/alternates ]; then rm .git/objects/info/alternates; fi \
+    && git config --global --add safe.directory /src \
+    && git fetch --prune --tags origin || true \
+    && git rev-parse HEAD || true
 RUN dotnet restore ImmoSearch.sln
 RUN dotnet publish src/ImmoSearch.Web/ImmoSearch.Web.csproj -c Release -o /app/publish /p:UseAppHost=false
 

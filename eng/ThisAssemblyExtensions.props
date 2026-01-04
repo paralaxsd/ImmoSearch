@@ -1,0 +1,20 @@
+<Project>
+  <!-- Populate additional ThisAssembly fields using git when available -->
+  <PropertyGroup>
+    <RepoUrl>Unknown</RepoUrl>
+    <Branch>Unknown</Branch>
+  </PropertyGroup>
+
+  <Target Name="GetRepoUrl" BeforeTargets="InvokeGetBuildVersionTask">
+    <Exec Command="git config --get remote.origin.url" ConsoleToMSBuild="true" IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="RepoUrl" />
+    </Exec>
+    <Exec Command="git rev-parse --abbrev-ref HEAD" ConsoleToMSBuild="true" IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="Branch" />
+    </Exec>
+    <ItemGroup>
+      <AdditionalThisAssemblyFields Include="GitRepositoryUrl" String="$(RepoUrl)" />
+      <AdditionalThisAssemblyFields Include="GitBranch" String="$(Branch)" />
+    </ItemGroup>
+  </Target>
+</Project>

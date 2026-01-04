@@ -21,6 +21,69 @@ body {
   margin-bottom: 60px;
 }
 
+.top-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pi-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.pi-symbol {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background-color: #007bff;
+  color: white;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  line-height: 22px;
+  font-size: 14px;
+}
+
+.pi-details {
+  position: absolute;
+  top: 120%;
+  right: 0;
+  background: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+  font-family: "Consolas", "Courier New", monospace;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  white-space: normal;
+  max-width: 500px;
+  min-width: 260px;
+  z-index: 1000;
+  display: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(5px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.pi-details.show {
+  display: block;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.top-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
   color: var(--bs-secondary-color);
   text-align: end;

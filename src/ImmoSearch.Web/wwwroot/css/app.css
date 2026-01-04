@@ -39,6 +39,18 @@ main {
     padding-top: 1rem;
 }
 
+.pi-container {
+    position: relative;
+}
+
+.pi-details {
+    display: none;
+}
+
+.pi-details.show {
+    display: block;
+}
+
 @media (max-width: 768px) {
     .page {
         flex-direction: column;

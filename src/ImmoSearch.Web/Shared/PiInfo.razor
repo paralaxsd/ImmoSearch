@@ -1,0 +1,26 @@
+@using System.Globalization
+@inject IWebHostEnvironment HostEnv
+
+<div class="pi-container">
+    <a href="#" class="pi-symbol"
+       title="Developer info"
+       @onclick="ToggleDetails"
+       @onclick:preventDefault="true">π</a>
+
+    <span class="pi-details @( _showDetails ? "show" : string.Empty )">
+        Environment: @HostEnv.EnvironmentName<br />
+        Built on @ThisAssembly.GitCommitDate.ToLocalTime().ToString(_culture)<br />
+        <a href="@CommitUrl">Commit @ThisAssembly.GitCommitId[..6]</a> on branch @ThisAssembly.GitBranch
+    </span>
+</div>
+
+@code {
+    bool _showDetails;
+    readonly CultureInfo _culture = new("en-US");
+
+    string CommitUrl => string.IsNullOrWhiteSpace(ThisAssembly.GitCommitUrl)
+        ? string.Empty
+        : ThisAssembly.GitCommitUrl;
+
+    void ToggleDetails() => _showDetails = !_showDetails;
+}
