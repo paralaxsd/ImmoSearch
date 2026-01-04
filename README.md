@@ -41,3 +41,6 @@ This project realized a Blazor Server app with a minimal API backend for scrapin
 ## Dev notes
 - Currency/culture defaults to `de-AT` for Euro formatting.
 - OpenAPI/Scalar UI is always enabled on the API.
+
+## License
+This project is licensed under the GNU GPL v3.0. See `LICENSE` for details.
