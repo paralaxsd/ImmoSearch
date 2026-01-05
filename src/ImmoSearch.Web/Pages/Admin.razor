@@ -1,5 +1,6 @@
 @page "/admin"
 @using ImmoSearch.Domain.Helpers
+@using ImmoSearch.Domain.Extensions
 
 <h1>Admin</h1>
 <div class="alert alert-info small">Admin-Aktionen erfordern (falls gesetzt) das Admin-Token. Listings bleiben öffentlich.</div>
@@ -68,8 +69,8 @@
     bool _busy;
     bool _requiresToken;
 
-    bool Disabled => _busy || (_requiresToken && string.IsNullOrWhiteSpace(_adminToken));
-    bool CanEdit => !_requiresToken || !string.IsNullOrWhiteSpace(_adminToken);
+    bool Disabled => _busy || (_requiresToken && _adminToken.NullOrWhitespace);
+    bool CanEdit => _requiresToken ? _adminToken.HasText : true;
 
     [Inject]
     public ListingApiClient ApiClient { get; set; } = default!;
@@ -163,7 +164,7 @@
             return false;
         }
 
-        _settings.ZipCode = string.Join(',', zips);
+        _settings.ZipCode = zips.JoinedBy(",");
 
         if (_settings.PrimaryPriceFrom is > 0 && _settings.PrimaryPriceTo is > 0 && _settings.PrimaryPriceFrom > _settings.PrimaryPriceTo)
         {

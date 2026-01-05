@@ -1,4 +1,5 @@
 using ImmoSearch.Domain.Models;
+using ImmoSearch.Domain.Extensions;
 using ImmoSearch.Infrastructure.Data;
 using ImmoSearch.Infrastructure.Scraping.Options;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +25,7 @@ public sealed class ScrapeSettingsProvider(ImmoContext db, IOptions<ImmobilienSc
         return new ImmobilienScout24Options
         {
             BaseUrl = _defaults.BaseUrl,
-            ZipCode = string.IsNullOrWhiteSpace(stored.ZipCode) ? _defaults.ZipCode : stored.ZipCode,
+            ZipCode = stored.ZipCode.NullOrWhitespace ? _defaults.ZipCode : stored.ZipCode,
             PrimaryAreaFrom = stored.PrimaryAreaFrom ?? _defaults.PrimaryAreaFrom,
             PrimaryAreaTo = stored.PrimaryAreaTo ?? _defaults.PrimaryAreaTo,
             PrimaryPriceFrom = stored.PrimaryPriceFrom ?? _defaults.PrimaryPriceFrom,

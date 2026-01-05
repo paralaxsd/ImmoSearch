@@ -1,4 +1,5 @@
 using System;
+using ImmoSearch.Domain.Extensions;
 
 partial class ThisAssembly
 {
@@ -19,7 +20,7 @@ partial class ThisAssembly
      * ***************************************************************************************/
     static string GetGitCommitUrl()
     {
-        if (string.IsNullOrWhiteSpace(GitRepositoryUrl) || string.IsNullOrWhiteSpace(GitCommitId)) return string.Empty;
+        if (GitRepositoryUrl.NullOrWhitespace || GitCommitId.NullOrWhitespace) return string.Empty;
 
         var gitIdx = GitRepositoryUrl.LastIndexOf(".git", StringComparison.InvariantCulture);
         var repoUrlBase = gitIdx > 0 ? GitRepositoryUrl[..gitIdx] : GitRepositoryUrl.TrimEnd('/');

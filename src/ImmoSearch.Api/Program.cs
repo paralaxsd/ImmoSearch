@@ -5,6 +5,7 @@ using ImmoSearch.Domain.Pagination;
 using ImmoSearch.Domain.Repositories;
 using ImmoSearch.Infrastructure;
 using ImmoSearch.Domain.Helpers;
+using ImmoSearch.Domain.Extensions;
 using ImmoSearch.Infrastructure.Data;
 using ImmoSearch.Infrastructure.Scraping;
 using ImmoSearch.Infrastructure.Scraping.Options;
@@ -58,12 +59,12 @@ app.MapPost("/admin/settings", async (IAdminRepository repo, IOptions<AdminOptio
     HttpContext context, ScrapeSettings payload) =>
 {
     if (!IsAuthorized(options.Value, context)) return Results.Unauthorized();
-    if (string.IsNullOrWhiteSpace(payload.Source)) payload.Source = "immoscout24_at";
+    if (payload.Source.NullOrWhitespace) payload.Source = "immoscout24_at";
 
     var zips = ZipCodeParser.TryParse(payload.ZipCode);
     if (zips is null)
         return Results.BadRequest("At least one valid ZIP code is required.");
-    payload.ZipCode = string.Join(',', zips);
+    payload.ZipCode = zips.JoinedBy(",");
 
     var saved = await repo.UpsertSettingsAsync(payload);
     return Results.Ok(saved);
@@ -105,7 +106,7 @@ app.Run();
 static bool IsAuthorized(AdminOptions options, HttpContext context)
 {
     var configured = options.Token?.Trim();
-    if (string.IsNullOrWhiteSpace(configured)) return true;
+    if (configured.NullOrWhitespace) return true;
     if (context.Request.Headers.TryGetValue("X-Admin-Token", out var header) && string.Equals(header.ToString().Trim(), configured, StringComparison.Ordinal)) return true;
     return false;
 }

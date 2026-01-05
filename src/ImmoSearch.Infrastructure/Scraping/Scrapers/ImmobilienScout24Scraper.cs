@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using ImmoSearch.Domain.Models;
 using ImmoSearch.Domain.Helpers;
 using ImmoSearch.Infrastructure.Scraping.Options;
+using ImmoSearch.Domain.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -74,13 +75,13 @@ public sealed class ImmobilienScout24Scraper(
 
             foreach (var hit in hits)
             {
-                if (string.IsNullOrWhiteSpace(hit.ExposeId)) continue;
+                if (hit.ExposeId.NullOrWhitespace) continue;
                 var externalId = hit.ExposeId!;
                 var url = hit.Links?.AbsoluteUrl ?? string.Empty;
-                if (string.IsNullOrWhiteSpace(url)) url = $"{options.BaseUrl.TrimEnd('/')}/expose/{externalId}";
+                if (url.NullOrWhitespace) url = $"{options.BaseUrl.TrimEnd('/')}/expose/{externalId}";
                 var thumb = hit.PrimaryPictureImageProps?.Src;
 
-                var title = string.IsNullOrWhiteSpace(hit.Headline) ? externalId : hit.Headline!.Trim();
+                var title = hit.Headline.NullOrWhitespace ? externalId : hit.Headline!.Trim();
                 var address = hit.AddressString?.Trim();
                 var city = ExtractCity(address) ?? string.Empty;
                 var published = ParseDate(hit.DateCreated);
@@ -148,20 +149,20 @@ public sealed class ImmobilienScout24Scraper(
         if (options.PrimaryPriceFrom > 0) query.Add($"primaryPriceFrom={options.PrimaryPriceFrom}");
         if (options.PrimaryPriceTo > 0) query.Add($"primaryPriceTo={options.PrimaryPriceTo}");
 
-        var qs = string.Join("&", query);
+        var qs = query.JoinedBy("&");
         return $"/regional/{zip.ToString(CultureInfo.InvariantCulture)}/immobilie-kaufen?{qs}";
     }
 
     static string? ExtractCity(string? address)
     {
-        if (string.IsNullOrWhiteSpace(address)) return null;
+        if (address.NullOrWhitespace) return null;
         var parts = address.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         return parts.Length == 0 ? address : parts[^1];
     }
 
     static DateTimeOffset? ParseDate(string? value)
     {
-        if (string.IsNullOrWhiteSpace(value)) return null;
+        if (value.NullOrWhitespace) return null;
         return DateTimeOffset.TryParse(value, out var dto) ? dto : null;
     }
 

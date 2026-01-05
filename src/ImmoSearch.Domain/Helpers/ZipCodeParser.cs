@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using ImmoSearch.Domain.Extensions;
 
 namespace ImmoSearch.Domain.Helpers;
 
@@ -13,7 +14,7 @@ public static class ZipCodeParser
 
     public static IReadOnlyList<int>? TryParse(string? raw)
     {
-        if (string.IsNullOrWhiteSpace(raw)) return null;
+        if (raw.NullOrWhitespace) return null;
 
         var list = new List<int>();
         var seen = new HashSet<int>();

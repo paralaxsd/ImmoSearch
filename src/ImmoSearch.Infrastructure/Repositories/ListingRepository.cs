@@ -1,6 +1,7 @@
 using ImmoSearch.Domain.Models;
 using ImmoSearch.Domain.Pagination;
 using ImmoSearch.Domain.Repositories;
+using ImmoSearch.Domain.Extensions;
 using ImmoSearch.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,9 +20,11 @@ public class ListingRepository(ImmoContext dbContext) : IListingRepository
     {
         var query = _dbContext.Listings.AsNoTracking();
 
-        if (!string.IsNullOrWhiteSpace(city))
+        if (city.HasText)
         {
-            query = query.Where(l => !string.IsNullOrWhiteSpace(l.City) && l.City.ToLower() == city.ToLower());
+            var cityLower = city.ToLower();
+            query = query.Where(l => !string.IsNullOrWhiteSpace(l.City) &&
+                                     l.City.ToLower() == cityLower);
         }
 
         if (minPrice.HasValue)
@@ -49,7 +52,7 @@ public class ListingRepository(ImmoContext dbContext) : IListingRepository
     public async Task<IReadOnlyList<Listing>> AddNewAsync(IEnumerable<Listing> listings, CancellationToken cancellationToken = default)
     {
         var incoming = listings
-            .Where(l => !string.IsNullOrWhiteSpace(l.Source) && !string.IsNullOrWhiteSpace(l.ExternalId))
+            .Where(l => l.Source.HasText && l.ExternalId.HasText)
             .ToList();
 
         if (incoming.Count == 0)
