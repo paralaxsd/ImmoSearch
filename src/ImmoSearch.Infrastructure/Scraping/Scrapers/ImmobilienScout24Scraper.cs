@@ -1,6 +1,8 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ImmoSearch.Domain.Models;
+using ImmoSearch.Domain.Helpers;
 using ImmoSearch.Infrastructure.Scraping.Options;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -41,62 +43,74 @@ public sealed class ImmobilienScout24Scraper(
             return listings;
         }
 
-        var requestUri = BuildGraphQlRequestUri(options);
-
-        var client = _httpClientFactory.CreateClient();
-        client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
-
-        var response = await client.GetAsync(requestUri, cancellationToken);
-        response.EnsureSuccessStatusCode();
-
-        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        var payload = await JsonSerializer.DeserializeAsync<Root>(stream, JsonOptions, cancellationToken);
-
-        var hits = payload?.Data?.GetDataByURL?.Results?.Hits;
-        if (hits is null || hits.Count == 0)
+        var zipCodes = ZipCodeParser.TryParse(options.ZipCode);
+        if (zipCodes is null)
         {
-            _logger.LogInformation("{Source} returned no hits", Source);
-            return [];
+            _logger.LogInformation("{Source}: no valid zip codes configured, skipping", Source);
+            return listings;
         }
 
-        foreach (var hit in hits)
+        var client = _httpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.UserAgent.ParseAdd(
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+            "(KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36");
+
+        foreach (var zip in zipCodes)
         {
-            if (string.IsNullOrWhiteSpace(hit.ExposeId)) continue;
-            var externalId = hit.ExposeId!;
-            var url = hit.Links?.AbsoluteUrl ?? string.Empty;
-            if (string.IsNullOrWhiteSpace(url)) url = $"{options.BaseUrl.TrimEnd('/')}/expose/{externalId}";
-            var thumb = hit.PrimaryPictureImageProps?.Src;
+            var requestUri = BuildGraphQlRequestUri(options, zip);
 
-            var title = string.IsNullOrWhiteSpace(hit.Headline) ? externalId : hit.Headline!.Trim();
-            var address = hit.AddressString?.Trim();
-            var city = ExtractCity(address) ?? string.Empty;
-            var published = ParseDate(hit.DateCreated);
+            var response = await client.GetAsync(requestUri, cancellationToken);
+            response.EnsureSuccessStatusCode();
 
-            listings.Add(new Listing
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            var payload = await JsonSerializer.DeserializeAsync<Root>(stream, JsonOptions, cancellationToken);
+
+            var hits = payload?.Data?.GetDataByURL?.Results?.Hits;
+            if (hits is null || hits.Count == 0)
             {
-                Source = Source,
-                ExternalId = externalId,
-                Title = title,
-                City = city,
-                Address = address,
-                Price = hit.PrimaryPrice,
-                Size = hit.PrimaryArea,
-                Rooms = hit.NumberOfRooms,
-                ThumbnailUrl = thumb,
-                Url = url,
-                PublishedAt = published,
-                ScrapedAt = DateTimeOffset.UtcNow,
-                Hash = $"{Source}|{externalId}"
-            });
+                _logger.LogInformation("{Source} returned no hits for {Zip}", Source, zip);
+                continue;
+            }
+
+            foreach (var hit in hits)
+            {
+                if (string.IsNullOrWhiteSpace(hit.ExposeId)) continue;
+                var externalId = hit.ExposeId!;
+                var url = hit.Links?.AbsoluteUrl ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(url)) url = $"{options.BaseUrl.TrimEnd('/')}/expose/{externalId}";
+                var thumb = hit.PrimaryPictureImageProps?.Src;
+
+                var title = string.IsNullOrWhiteSpace(hit.Headline) ? externalId : hit.Headline!.Trim();
+                var address = hit.AddressString?.Trim();
+                var city = ExtractCity(address) ?? string.Empty;
+                var published = ParseDate(hit.DateCreated);
+
+                listings.Add(new Listing
+                {
+                    Source = Source,
+                    ExternalId = externalId,
+                    Title = title,
+                    City = city,
+                    Address = address,
+                    Price = hit.PrimaryPrice,
+                    Size = hit.PrimaryArea,
+                    Rooms = hit.NumberOfRooms,
+                    ThumbnailUrl = thumb,
+                    Url = url,
+                    PublishedAt = published,
+                    ScrapedAt = DateTimeOffset.UtcNow,
+                    Hash = $"{Source}|{externalId}"
+                });
+            }
         }
 
         _logger.LogInformation("{Source} parsed {Count} listings from GraphQL", Source, listings.Count);
         return listings;
     }
 
-    string BuildGraphQlRequestUri(ImmobilienScout24Options options)
+    string BuildGraphQlRequestUri(ImmobilienScout24Options options, int zip)
     {
-        var urlPath = BuildListingUrlPath(options);
+        var urlPath = BuildListingUrlPath(options, zip);
         var variables = new Dictionary<string, object?>
         {
             ["aspectRatio"] = 1.77,
@@ -119,10 +133,11 @@ public sealed class ImmobilienScout24Scraper(
         var variablesParam = Uri.EscapeDataString(JsonSerializer.Serialize(variables, RawJsonOptions));
         var extensionsParam = Uri.EscapeDataString(JsonSerializer.Serialize(extensions, RawJsonOptions));
 
-        return $"{options.BaseUrl.TrimEnd('/')}/portal/graphql?operationName=getDataByURL&variables={variablesParam}&extensions={extensionsParam}";
+        return $"{options.BaseUrl.TrimEnd('/')}/portal/graphql?operationName=getDataByURL" +
+               $"&variables={variablesParam}&extensions={extensionsParam}";
     }
 
-    string BuildListingUrlPath(ImmobilienScout24Options options)
+    string BuildListingUrlPath(ImmobilienScout24Options options, int zip)
     {
         var query = new List<string>
         {
@@ -134,7 +149,7 @@ public sealed class ImmobilienScout24Scraper(
         if (options.PrimaryPriceTo > 0) query.Add($"primaryPriceTo={options.PrimaryPriceTo}");
 
         var qs = string.Join("&", query);
-        return $"/regional/{options.ZipCode}/immobilie-kaufen?{qs}";
+        return $"/regional/{zip.ToString(CultureInfo.InvariantCulture)}/immobilie-kaufen?{qs}";
     }
 
     static string? ExtractCity(string? address)

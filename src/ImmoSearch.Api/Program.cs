@@ -4,6 +4,7 @@ using ImmoSearch.Domain.Models;
 using ImmoSearch.Domain.Pagination;
 using ImmoSearch.Domain.Repositories;
 using ImmoSearch.Infrastructure;
+using ImmoSearch.Domain.Helpers;
 using ImmoSearch.Infrastructure.Data;
 using ImmoSearch.Infrastructure.Scraping;
 using ImmoSearch.Infrastructure.Scraping.Options;
@@ -53,10 +54,17 @@ app.MapGet("/admin/settings", async (IAdminRepository repo) =>
     return settings is null ? Results.NoContent() : Results.Ok(settings);
 }).WithName("GetSettings");
 
-app.MapPost("/admin/settings", async (IAdminRepository repo, IOptions<AdminOptions> options, HttpContext context, ScrapeSettings payload) =>
+app.MapPost("/admin/settings", async (IAdminRepository repo, IOptions<AdminOptions> options, 
+    HttpContext context, ScrapeSettings payload) =>
 {
     if (!IsAuthorized(options.Value, context)) return Results.Unauthorized();
     if (string.IsNullOrWhiteSpace(payload.Source)) payload.Source = "immoscout24_at";
+
+    var zips = ZipCodeParser.TryParse(payload.ZipCode);
+    if (zips is null)
+        return Results.BadRequest("At least one valid ZIP code is required.");
+    payload.ZipCode = string.Join(',', zips);
+
     var saved = await repo.UpsertSettingsAsync(payload);
     return Results.Ok(saved);
 }).WithName("UpsertSettings");

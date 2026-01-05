@@ -1,4 +1,5 @@
 @page "/admin"
+@using ImmoSearch.Domain.Helpers
 
 <h1>Admin</h1>
 <div class="alert alert-info small">Admin-Aktionen erfordern (falls gesetzt) das Admin-Token. Listings bleiben öffentlich.</div>
@@ -155,6 +156,15 @@
 
     bool ValidateRanges()
     {
+        var zips = ZipCodeParser.TryParse(_settings.ZipCode);
+        if (zips is null)
+        {
+            _status = "Enter at least one valid ZIP (digits, comma-separated).";
+            return false;
+        }
+
+        _settings.ZipCode = string.Join(',', zips);
+
         if (_settings.PrimaryPriceFrom is > 0 && _settings.PrimaryPriceTo is > 0 && _settings.PrimaryPriceFrom > _settings.PrimaryPriceTo)
         {
             _status = "Price from must be <= price to.";
