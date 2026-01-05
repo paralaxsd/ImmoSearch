@@ -5,12 +5,19 @@
     <a href="#" class="pi-symbol"
        title="Developer info"
        @onclick="ToggleDetails"
-       @onclick:preventDefault="true">π</a>
+       @onclick:preventDefault="true"><span class="pi-glyph">π</span></a>
 
     <span class="pi-details @( _showDetails ? "show" : string.Empty )">
-        Environment: @HostEnv.EnvironmentName<br />
-        Built on @ThisAssembly.GitCommitDate.ToLocalTime().ToString(_culture)<br />
-        <a href="@CommitUrl">Commit @ThisAssembly.GitCommitId[..6]</a> on branch @ThisAssembly.GitBranch
+        <div class="pi-heading">
+            <span class="pi-icon">👨‍🔬</span>
+            Developer info
+        </div>
+        <strong>Environment:</strong> @HostEnv.EnvironmentName<br />
+        <strong>Built at:</strong> @ThisAssembly.GitCommitDate.ToLocalTime().ToString(_culture)<br />
+        <strong>Commit:</strong> <a href="@CommitUrl">@ThisAssembly.GitCommitId[..6]</a>
+        <span class="text-muted">(@ThisAssembly.GitBranch)</span><br />
+        <strong>Message:</strong> @ThisAssembly.GitCommitMessage<br />
+        <strong>Authored:</strong> @ThisAssembly.GitCommitAuthorDate.ToLocalTime().ToString(_culture)
     </span>
 </div>
 

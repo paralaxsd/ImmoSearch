@@ -3,6 +3,7 @@
   <PropertyGroup>
     <RepoUrl>Unknown</RepoUrl>
     <Branch>Unknown</Branch>
+    <CommitMessage>Unknown</CommitMessage>
   </PropertyGroup>
 
   <Target Name="GetRepoUrl" BeforeTargets="InvokeGetBuildVersionTask">
@@ -12,9 +13,13 @@
     <Exec Command="git rev-parse --abbrev-ref HEAD" ConsoleToMSBuild="true" IgnoreExitCode="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="Branch" />
     </Exec>
+    <Exec Command="git log -1 --pretty=format:%%s" ConsoleToMSBuild="true" IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="CommitMessage" />
+    </Exec>
     <ItemGroup>
       <AdditionalThisAssemblyFields Include="GitRepositoryUrl" String="$(RepoUrl)" />
       <AdditionalThisAssemblyFields Include="GitBranch" String="$(Branch)" />
+      <AdditionalThisAssemblyFields Include="GitCommitMessage" String="$(CommitMessage)" />
     </ItemGroup>
   </Target>
 </Project>

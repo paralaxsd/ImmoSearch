@@ -37,6 +37,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "eng", "eng", "{ADFA6436-EA0
 	ProjectSection(SolutionItems) = preProject
 		eng\build_docker_container.ps1 = eng\build_docker_container.ps1
 		eng\relaunch_docker_container.ps1 = eng\relaunch_docker_container.ps1
+		eng\ThisAssemblyExtensions.props = eng\ThisAssemblyExtensions.props
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{65571E1C-2DFB-49E2-BE9B-17763D240583}"
