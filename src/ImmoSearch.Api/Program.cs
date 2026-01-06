@@ -13,6 +13,8 @@ using ImmoSearch.Infrastructure.Scraping.Scrapers;
 using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 
+PrepareApplication();
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
@@ -111,4 +113,9 @@ static bool IsAuthorized(AdminOptions options, HttpContext context)
     if (configured.NullOrWhitespace) return true;
     if (context.Request.Headers.TryGetValue("X-Admin-Token", out var header) && string.Equals(header.ToString().Trim(), configured, StringComparison.Ordinal)) return true;
     return false;
+}
+
+static void PrepareApplication()
+{
+    Console.WriteLine($"[{DateTime.Now}] Launching ImmoSearch.API v{ThisAssembly.AssemblyInformationalVersion}");
 }

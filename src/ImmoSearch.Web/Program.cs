@@ -1,12 +1,9 @@
 using System.Globalization;
 using ImmoSearch.Web.Services;
 
+PrepareApplication();
+
 var builder = WebApplication.CreateBuilder(args);
-
-var culture = CultureInfo.GetCultureInfo("de-AT");
-CultureInfo.DefaultThreadCurrentCulture = culture;
-CultureInfo.DefaultThreadCurrentUICulture = culture;
-
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddHttpClient<ListingApiClient>((sp, client) =>
@@ -33,3 +30,12 @@ app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
 app.Run();
+
+static void PrepareApplication()
+{
+    var culture = CultureInfo.GetCultureInfo("de-AT");
+    CultureInfo.DefaultThreadCurrentCulture = culture;
+    CultureInfo.DefaultThreadCurrentUICulture = culture;
+
+    Console.WriteLine($"[{DateTime.Now}] Launching ImmoSearch.Web v{ThisAssembly.AssemblyInformationalVersion}");
+}
