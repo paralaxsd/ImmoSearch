@@ -13,7 +13,11 @@
     <Exec Command="git rev-parse --abbrev-ref HEAD" ConsoleToMSBuild="true" IgnoreExitCode="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="Branch" />
     </Exec>
-    <Exec Command="git log -1 --pretty=format:%%s" ConsoleToMSBuild="true" IgnoreExitCode="true">
+    <PropertyGroup>
+      <CommitMessageFormat Condition="'$([MSBuild]::IsOSUnixLike())' == 'true'">%s</CommitMessageFormat>
+      <CommitMessageFormat Condition="'$([MSBuild]::IsOSUnixLike())' != 'true'">%%s</CommitMessageFormat>
+    </PropertyGroup>
+    <Exec Command="git log -1 --pretty=format:$(CommitMessageFormat)" ConsoleToMSBuild="true" IgnoreExitCode="true">
       <Output TaskParameter="ConsoleOutput" PropertyName="CommitMessage" />
     </Exec>
     <ItemGroup>
