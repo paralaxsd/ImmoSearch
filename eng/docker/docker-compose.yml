@@ -13,7 +13,7 @@ services:
       ConnectionStrings__DefaultConnection: Data Source=/data/immo.db
       Admin__Token: ${ADMIN_TOKEN:-}
     volumes:
-      - ${DATA_DIR:-../../assets/docker}/data:/data
+      - ${DATA_DIR:-../../assets/docker/data}:/data
     ports:
       - "8080:8080"
   web:

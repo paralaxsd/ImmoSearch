@@ -29,9 +29,11 @@ try {
     if (-not $DataDir) { $DataDir = Join-Path $PSScriptRoot '..\assets\docker' }
     $resolvedData = Resolve-Path -Path $DataDir -ErrorAction SilentlyContinue
     if (-not $resolvedData) {
-        $resolvedData = New-Item -ItemType Directory -Path $DataDir -Force
+        New-Item -ItemType Directory -Path $DataDir -Force | Out-Null
+        $resolvedData = Resolve-Path -Path $DataDir -ErrorAction Stop
     }
     $env:DATA_DIR = $resolvedData.ProviderPath
+    Write-Host "Resolved data dir to $env:DATA_DIR." -ForegroundColor Cyan
 
     if ($Build.IsPresent) {
         Write-Host "Building containers via docker compose..." -ForegroundColor Cyan
