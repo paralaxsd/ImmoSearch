@@ -10,6 +10,8 @@ public interface IListingRepository
         string? city = null,
         decimal? minPrice = null,
         decimal? maxPrice = null,
+        string? sortBy = null,
+        bool sortDesc = true,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<Listing>> AddNewAsync(IEnumerable<Listing> listings, CancellationToken cancellationToken = default);

@@ -11,9 +11,17 @@ public class ListingApiClient(HttpClient httpClient)
 
     public string? AdminToken { get; set; }
 
-    public async Task<PagedResult<Listing>?> GetListingsAsync(int page = 1, int pageSize = 20, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<Listing>?> GetListingsAsync(
+        int page = 1,
+        int pageSize = 20,
+        string? sortBy = null,
+        bool sortDesc = true,
+        CancellationToken cancellationToken = default)
     {
-        var response = await _httpClient.GetAsync($"/listings?page={page}&pageSize={pageSize}", cancellationToken);
+        var query = $"/listings?page={page}&pageSize={pageSize}&sortDesc={sortDesc.ToString().ToLowerInvariant()}";
+        if (!string.IsNullOrWhiteSpace(sortBy)) query += $"&sortBy={Uri.EscapeDataString(sortBy)}";
+
+        var response = await _httpClient.GetAsync(query, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {

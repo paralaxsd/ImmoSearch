@@ -16,6 +16,8 @@ public class ListingRepository(ImmoContext dbContext) : IListingRepository
         string? city = null,
         decimal? minPrice = null,
         decimal? maxPrice = null,
+        string? sortBy = null,
+        bool sortDesc = true,
         CancellationToken cancellationToken = default)
     {
         var query = _dbContext.Listings.AsNoTracking();
@@ -37,11 +39,12 @@ public class ListingRepository(ImmoContext dbContext) : IListingRepository
             query = query.Where(l => l.Price <= maxPrice);
         }
 
+        query = ApplySorting(query, sortBy, sortDesc);
+
         var total = await query.CountAsync(cancellationToken);
 
         var items = await query
             .AsNoTracking()
-            .OrderByDescending(l => l.ScrapedAt)
             .Skip(request.Skip)
             .Take(request.PageSize)
             .ToListAsync(cancellationToken);
@@ -106,5 +109,41 @@ public class ListingRepository(ImmoContext dbContext) : IListingRepository
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return newListings;
+    }
+
+    static IQueryable<Listing> ApplySorting(
+        IQueryable<Listing> query,
+        string? sortBy,
+        bool sortDesc)
+    {
+        var key = sortBy?.Trim().ToLowerInvariant();
+
+        return key switch
+        {
+            "price" => sortDesc
+                ? query.OrderByDescending(l => l.Price ?? decimal.MinValue)
+                : query.OrderBy(l => l.Price ?? decimal.MaxValue),
+            "size" => sortDesc
+                ? query.OrderByDescending(l => l.Size ?? decimal.MinValue)
+                : query.OrderBy(l => l.Size ?? decimal.MaxValue),
+            "rooms" => sortDesc
+                ? query.OrderByDescending(l => l.Rooms ?? decimal.MinValue)
+                : query.OrderBy(l => l.Rooms ?? decimal.MaxValue),
+            "firstseen" => sortDesc
+                ? query.OrderByDescending(l => l.FirstSeenAt)
+                : query.OrderBy(l => l.FirstSeenAt),
+            "lastseen" => sortDesc
+                ? query.OrderByDescending(l => l.LastSeenAt)
+                : query.OrderBy(l => l.LastSeenAt),
+            "city" => sortDesc
+                ? query.OrderByDescending(l => l.City)
+                : query.OrderBy(l => l.City),
+            "title" => sortDesc
+                ? query.OrderByDescending(l => l.Title)
+                : query.OrderBy(l => l.Title),
+            _ => sortDesc
+                ? query.OrderByDescending(l => l.ScrapedAt)
+                : query.OrderBy(l => l.ScrapedAt)
+        };
     }
 }

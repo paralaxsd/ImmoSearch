@@ -24,6 +24,7 @@ body {
 .top-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 1rem;
 }
 
@@ -53,6 +54,12 @@ body {
   top: -1px;
 }
 
+.top-title {
+  font-weight: 700;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+}
+
 .pi-details {
   position: absolute;
   top: 120%;
@@ -73,6 +80,21 @@ body {
   pointer-events: none;
   transform: translateY(5px);
   transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.sort-header {
+  white-space: nowrap;
+  font-size: inherit;
+  color: inherit;
+  text-decoration: underline;
+}
+
+.sort-header:hover {
+  text-decoration: underline;
+}
+
+.listings-table thead th {
+  font-weight: 500;
 }
 
 .pi-overlay {

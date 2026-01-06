@@ -14,4 +14,5 @@ Remember my personal C# style. For other languages the same principles apply.
 - Try to minimize negations in conditionals to improve readability.
 - Prefer functional expressions over loops wherever possible without sacrificing readability.
 - Prefer early returns to reduce cyclomatic complexity.
+- Use utilty methods and extensions we already have in our code base wherever possible.
 - In principle SOLID, DRY and YAGNI make a lot of sense.

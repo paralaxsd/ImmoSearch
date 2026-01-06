@@ -1,7 +1,5 @@
 @page "/"
 
-<h1>Listings</h1>
-
 <div class="mb-3 d-flex gap-2 align-items-center">
     <button class="btn btn-primary" @onclick="Refresh" disabled="@_loading">Refresh</button>
     <span class="text-muted">Page @_page / @(_totalPages == 0 ? 1 : _totalPages)</span>
@@ -28,19 +26,19 @@ else if (_result is not null)
                 <span class="badge bg-light text-dark">@_result.TotalCount total</span>
             </div>
             <div class="table-responsive">
-                <table class="table table-striped align-middle">
+                <table class="table table-striped align-middle listings-table">
                     <thead class="table-light">
                         <tr>
                             <th style="width: 110px;"></th>
-                            <th>Title</th>
-                            <th>City</th>
-                            <th>Price</th>
-                            <th>Size</th>
-                            <th>Rooms</th>
-                            <th>First seen</th>
-                            <th>Last seen</th>
+                            <th>@SortHeader("title", "Title")</th>
+                            <th>@SortHeader("city", "City")</th>
+                            <th>@SortHeader("price", "Price")</th>
+                            <th>@SortHeader("size", "Size")</th>
+                            <th>@SortHeader("rooms", "Rooms")</th>
+                            <th>@SortHeader("firstseen", "First seen")</th>
+                            <th>@SortHeader("lastseen", "Last seen")</th>
                             <th>Source</th>
-                            <th>Link</th>
+                            <th style="width: 60px;">Link</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -50,7 +48,9 @@ else if (_result is not null)
                             <td>
                                 @if (!string.IsNullOrWhiteSpace(item.ThumbnailUrl))
                                 {
-                                    <img src="@item.ThumbnailUrl" alt="thumb" class="img-thumbnail" style="max-width: 100px; max-height: 75px; object-fit: cover;" />
+                                    <a href="@item.Url" target="_blank" title="Open listing">
+                                        <img src="@item.ThumbnailUrl" alt="thumb" class="img-thumbnail" style="max-width: 100px; max-height: 75px; object-fit: cover;" />
+                                    </a>
                                 }
                             </td>
                             <td>@item.Title</td>
@@ -61,7 +61,7 @@ else if (_result is not null)
                             <td>@item.FirstSeenAt.ToString("yyyy-MM-dd")</td>
                             <td>@item.LastSeenAt.ToString("yyyy-MM-dd")</td>
                             <td>@item.Source</td>
-                            <td><a href="@item.Url" target="_blank">Open</a></td>
+                            <td><a href="@item.Url" target="_blank" title="Open listing">↗</a></td>
                         </tr>
                     }
                     </tbody>
@@ -84,6 +84,8 @@ else if (_result is not null)
     bool _error;
     PagedResult<Listing>? _result;
     ScrapeSettings? _settings;
+    string? _sortBy = "scrapedat";
+    bool _sortDesc = true;
 
     [Inject]
     public ListingApiClient ApiClient { get; set; } = default!;
@@ -102,7 +104,7 @@ else if (_result is not null)
 
         try
         {
-            _result = await ApiClient.GetListingsAsync(page, _pageSize);
+            _result = await ApiClient.GetListingsAsync(page, _pageSize, _sortBy, _sortDesc);
             if (_result is null)
             {
                 _error = true;
@@ -139,6 +141,37 @@ else if (_result is not null)
     }
 
     Task Refresh() => LoadPage(_page);
+
+    Task SortBy(string key)
+    {
+        if (string.Equals(_sortBy, key, StringComparison.OrdinalIgnoreCase))
+            _sortDesc = !_sortDesc;
+        else
+        {
+            _sortBy = key;
+            _sortDesc = key.Equals("scrapedat", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return LoadPage(1);
+    }
+
+    RenderFragment SortHeader(string key, string label) => builder =>
+    {
+        var isActive = string.Equals(_sortBy, key, StringComparison.OrdinalIgnoreCase);
+        var sortSymbol = isActive ? (_sortDesc ? "▼" : "▲") : string.Empty;
+
+        builder.OpenElement(0, "button");
+        builder.AddAttribute(1, "type", "button");
+        builder.AddAttribute(2, "class", "btn btn-link p-0 text-start sort-header");
+        builder.AddAttribute(3, "onclick", EventCallback.Factory.Create(this, () => SortBy(key)));
+        builder.AddContent(4, label);
+        if (!string.IsNullOrEmpty(sortSymbol))
+        {
+            builder.AddContent(5, " ");
+            builder.AddContent(6, sortSymbol);
+        }
+        builder.CloseElement();
+    };
 
     Task Prev()
     {

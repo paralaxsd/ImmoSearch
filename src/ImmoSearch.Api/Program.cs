@@ -42,10 +42,12 @@ app.MapGet("/listings", async (
     int pageSize = 20,
     string? city = null,
     decimal? minPrice = null,
-    decimal? maxPrice = null) =>
+    decimal? maxPrice = null,
+    string? sortBy = null,
+    bool sortDesc = true) =>
 {
     var request = new PageRequest(page, pageSize);
-    var result = await repository.GetPageAsync(request, city, minPrice, maxPrice);
+    var result = await repository.GetPageAsync(request, city, minPrice, maxPrice, sortBy, sortDesc);
     return Results.Ok(result);
 }).WithName("GetListings");
 
