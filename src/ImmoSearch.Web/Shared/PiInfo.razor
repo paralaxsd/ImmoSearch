@@ -15,7 +15,7 @@
     <span class="pi-details @( _showDetails ? "show" : string.Empty )">
         <div class="pi-heading">
             <span class="pi-icon">👨‍🔬</span>
-            Developer info
+            Developer info  <span class="text-muted">(v.@ThisAssembly.AssemblyShortFileVersion)</span>
         </div>
         <strong>Environment:</strong> @HostEnv.EnvironmentName<br />
         <strong>Built at:</strong> @ThisAssembly.GitCommitDate.ToLocalTime().ToString(_culture)<br />

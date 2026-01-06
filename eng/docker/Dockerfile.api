@@ -4,6 +4,7 @@ WORKDIR /src
 COPY ./ImmoSearch.sln ./
 COPY ./Directory.Build.props ./
 COPY ./eng/ThisAssemblyExtensions.props ./eng/ThisAssemblyExtensions.props
+COPY ./version.json ./
 COPY ./.git ./.git
 COPY ./src ./src
 # Normalize .git if it's a file pointing outside the build context (worktree clones)
@@ -22,6 +23,12 @@ RUN dotnet publish src/ImmoSearch.Api/ImmoSearch.Api.csproj -c Release -o /app/p
 
 FROM mcr.microsoft.com/dotnet/nightly/aspnet:10.0 AS final
 WORKDIR /app
+ENV TZ=Europe/Vienna
+RUN apt-get update \
+    && apt-get install -y tzdata \
+    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
+    && echo $TZ > /etc/timezone \
+    && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/publish .
 ENV ASPNETCORE_URLS=http://+:8080
 ENTRYPOINT ["dotnet", "ImmoSearch.Api.dll"]
