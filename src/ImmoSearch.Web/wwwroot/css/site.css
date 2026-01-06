@@ -60,6 +60,40 @@ body {
   letter-spacing: 0.02em;
 }
 
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: -260px;
+  height: 100vh;
+  width: 240px;
+  background: #f8f9fa;
+  border-right: 1px solid #e5e7eb;
+  z-index: 1050;
+  transition: left 0.2s ease;
+}
+
+.sidebar.show {
+  left: 0;
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+main {
+  position: relative;
+}
+
+.sidebar-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.05);
+  z-index: 1040;
+}
+
 .pi-details {
   position: absolute;
   top: 120%;

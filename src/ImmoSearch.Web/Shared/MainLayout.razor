@@ -1,15 +1,29 @@
 @inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Routing
+@implements IDisposable
 
 <PageTitle>ImmoSearch</PageTitle>
 
 <div class="page">
-    <div class="sidebar">
+    <div class="sidebar @(_menuOpen ? "show" : string.Empty)">
         <NavMenu />
     </div>
 
     <main>
+        @if (_menuOpen)
+        {
+            <div class="sidebar-overlay" @onclick="CloseMenu"></div>
+        }
+
         <div class="top-row px-4">
-            <div class="top-title">@_heading</div>
+            <div class="d-flex align-items-center gap-2">
+                <button class="btn btn-outline-secondary"
+                        @onclick="ToggleMenu"
+                        aria-label="Toggle navigation">
+                    @(_menuOpen ? "✕" : "☰")
+                </button>
+                <div class="top-title">@_heading</div>
+            </div>
             <div class="d-flex align-items-center gap-3">
                 <a href="https://github.com/paralaxsd/ImmoSearch" target="_blank">GitHub</a>
                 <PiInfo />
@@ -23,9 +37,16 @@
 </div>
 
 @code {
+    string _heading = "ImmoSearch";
+    bool _menuOpen;
+
     [Inject] NavigationManager Nav { get; set; } = default!;
 
-    string _heading = "ImmoSearch";
+
+    public void Dispose()
+    {
+        Nav.LocationChanged -= OnLocationChanged;
+    }
 
     protected override void OnParametersSet()
     {
@@ -37,4 +58,19 @@
             _ => "ImmoSearch"
         };
     }
+
+    protected override void OnInitialized()
+    {
+        Nav.LocationChanged += OnLocationChanged;
+    }
+
+    void OnLocationChanged(object? sender, LocationChangedEventArgs args)
+    {
+        _menuOpen = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    void ToggleMenu() => _menuOpen = !_menuOpen;
+
+    void CloseMenu() => _menuOpen = false;
 }
