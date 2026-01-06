@@ -4,3 +4,4 @@
 /**/obj/
 assets/docker/data
 .nuke/temp
+assets/docker/immo.db

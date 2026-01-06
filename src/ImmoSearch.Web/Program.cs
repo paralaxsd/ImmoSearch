@@ -1,12 +1,21 @@
 using System.Globalization;
 using ImmoSearch.Web.Services;
+using ImmoSearch.Web.Options;
+using ImmoSearch.Web.Models;
 
 PrepareApplication();
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+builder.Services.Configure<AppInfoOptions>(builder.Configuration.GetSection("AppInfo"));
 builder.Services.AddHttpClient<ListingApiClient>((sp, client) =>
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
+    var baseUrl = configuration["ApiBaseUrl"] ?? "https://localhost:5001";
+    client.BaseAddress = new Uri(baseUrl);
+});
+builder.Services.AddHttpClient<StatusApiClient>((sp, client) =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
     var baseUrl = configuration["ApiBaseUrl"] ?? "https://localhost:5001";

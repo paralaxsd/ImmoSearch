@@ -1,5 +1,9 @@
 @inherits LayoutComponentBase
 @using Microsoft.AspNetCore.Components.Routing
+@using Microsoft.Extensions.Options
+@using ImmoSearch.Web.Options
+@using ImmoSearch.Web.Models
+@using ImmoSearch.Web.Services
 @implements IDisposable
 
 <PageTitle>ImmoSearch</PageTitle>
@@ -30,6 +34,22 @@
             </div>
         </div>
 
+        @if (!_configOk)
+        {
+            <div class="alert alert-warning m-3" role="alert">
+                @_appInfo.WarningMessage
+                @if (_missing?.Length > 0)
+                {
+                    <ul class="mb-0 mt-2">
+                        @foreach (var item in _missing)
+                        {
+                            <li>@item</li>
+                        }
+                    </ul>
+                }
+            </div>
+        }
+
         <article class="content px-4">
             @Body
         </article>
@@ -39,13 +59,43 @@
 @code {
     string _heading = "ImmoSearch";
     bool _menuOpen;
+    bool _configOk = true;
+    AppInfoOptions _appInfo = new();
+    string[]? _missing;
 
     [Inject] NavigationManager Nav { get; set; } = default!;
+    [Inject] IOptions<AppInfoOptions> AppInfo { get; set; } = default!;
+    [Inject] StatusApiClient StatusClient { get; set; } = default!;
 
 
     public void Dispose()
     {
         Nav.LocationChanged -= OnLocationChanged;
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _appInfo = AppInfo.Value;
+        Nav.LocationChanged += OnLocationChanged;
+
+        try
+        {
+            var status = await StatusClient.GetConfigStatusAsync();
+            if (status is null)
+            {
+                _configOk = false;
+                _missing = new[] { "Configuration status unavailable" };
+                return;
+            }
+
+            _configOk = status.NotificationsConfigured;
+            _missing = status.Missing.Length > 0 ? status.Missing : null;
+        }
+        catch
+        {
+            _configOk = false;
+            _missing = new[] { "Configuration status unavailable" };
+        }
     }
 
     protected override void OnParametersSet()
@@ -54,14 +104,10 @@
         _heading = path switch
         {
             "admin" => "Admin",
+            "notifications" => "Notifications",
             "" => "Listings",
             _ => "ImmoSearch"
         };
-    }
-
-    protected override void OnInitialized()
-    {
-        Nav.LocationChanged += OnLocationChanged;
     }
 
     void OnLocationChanged(object? sender, LocationChangedEventArgs args)

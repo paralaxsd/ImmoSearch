@@ -38,6 +38,52 @@ This project realized a Blazor Server app with a minimal API backend for scrapin
 - Uses stored scrape settings; skips runs if none exist.
 - Interval default via `Scraping:DefaultIntervalSeconds`, optional override per settings (`IntervalSeconds`).
 
+## Notifications
+
+The app supports Web Push notifications for new listings (future feature). Currently, only test notifications are implemented.
+
+### Setup Web Push
+
+1. **Generate VAPID keys** (required for signing push messages):
+   - With Node.js: `npx web-push generate-vapid-keys --email "your-email@example.com"`
+   - With Docker (no Node.js install needed): `docker run --rm node:20 npx web-push generate-vapid-keys --email "your-email@example.com"`
+   - Or use .NET tool: `dotnet tool install --global Lib.Net.Http.WebPush.Management` then `push-tools vapid generate`
+
+2. **Configure in appsettings or environment**:
+   ```json
+   {
+     "Notifications": {
+       "WebPush": {
+         "Enabled": true,
+         "PublicKey": "your-public-key",
+         "PrivateKey": "your-private-key",
+         "Subject": "mailto:your-email@example.com"
+       }
+     },
+     "Cors": {
+       "AllowedOrigins": ["https://your-domain.com"]
+     }
+   }
+   ```
+
+3. **Environment variables** (for Docker/TeamCity):
+   - `Notifications__WebPush__Enabled=true`
+   - `Notifications__WebPush__PublicKey=...`
+   - `Notifications__WebPush__PrivateKey=...`
+   - `Notifications__WebPush__Subject=mailto:...`
+   - `Cors__AllowedOrigins=https://your-domain.com`
+
+4. **Usage**:
+   - Go to `/notifications` in the web app.
+   - Click "Aktivieren" to subscribe for push notifications (requires HTTPS).
+   - Click "Test-Push senden" to send a test notification to all subscribers.
+   - Notifications appear in the browser/OS tray.
+
+### Notes
+- HTTPS is required for push subscriptions.
+- Supported in modern browsers (Chrome, Firefox, Edge).
+- CORS must allow the web app origin for subscription API calls.
+
 ## Dev notes
 - Currency/culture defaults to `de-AT` for Euro formatting.
 - OpenAPI/Scalar UI is always enabled on the API.

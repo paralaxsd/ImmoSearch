@@ -11,6 +11,8 @@ public class ListingApiClient(HttpClient httpClient)
 {
     private readonly HttpClient _httpClient = httpClient;
 
+    public string BaseAddress => _httpClient.BaseAddress?.ToString()?.TrimEnd('/') ?? string.Empty;
+
     public string? AdminToken { get; set; }
 
     public async Task<PagedResult<Listing>?> GetListingsAsync(
@@ -87,6 +89,12 @@ public class ListingApiClient(HttpClient httpClient)
 
     public Task<AdminStatus?> GetAdminStatusAsync(CancellationToken cancellationToken = default) =>
         _httpClient.GetFromJsonAsync<AdminStatus?>("/admin/status", cancellationToken);
+
+    public async Task<bool> SendTestPushAsync(CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.PostAsync("/notifications/webpush/test", content: null, cancellationToken);
+        return response.IsSuccessStatusCode;
+    }
 
     public async Task<bool> DeleteListingsAsync(CancellationToken cancellationToken = default)
     {

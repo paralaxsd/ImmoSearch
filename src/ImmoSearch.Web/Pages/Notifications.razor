@@ -1,0 +1,106 @@
+@page "/notifications"
+@using ImmoSearch.Web.Models
+@using Microsoft.JSInterop
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <div class="d-flex align-items-center mb-3">
+            <h5 class="mb-0">Browser-Benachrichtigungen</h5>
+            <span class="badge bg-secondary ms-2">Web Push</span>
+        </div>
+        @if (!_webPushEnabled)
+        {
+            <div class="alert alert-warning" role="alert">WebPush ist nicht konfiguriert.</div>
+        }
+        else
+        {
+            <div class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-outline-primary" @onclick="EnablePush" disabled="@_busy">Aktivieren</button>
+                <button class="btn btn-outline-success" @onclick="SendTestPush" disabled="@_busy">Test-Push senden</button>
+                @if (!string.IsNullOrWhiteSpace(_status))
+                {
+                    <span class="text-muted align-self-center">@_status</span>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    bool _webPushEnabled;
+    string? _webPushPublicKey;
+    string _status = string.Empty;
+    bool _busy;
+
+    [Inject] StatusApiClient StatusClient { get; set; } = default!;
+    [Inject] ListingApiClient ApiClient { get; set; } = default!;
+    [Inject] IJSRuntime JS { get; set; } = default!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadConfig();
+    }
+
+    async Task LoadConfig()
+    {
+        try
+        {
+            var cfg = await StatusClient.GetConfigStatusAsync();
+            _webPushEnabled = cfg?.WebPushEnabled == true;
+            _webPushPublicKey = cfg?.WebPushPublicKey;
+            _status = string.Empty;
+        }
+        catch
+        {
+            _webPushEnabled = false;
+            _webPushPublicKey = null;
+            _status = "Konfiguration nicht verfügbar.";
+        }
+    }
+
+    async Task EnablePush()
+    {
+        if (!_webPushEnabled || string.IsNullOrWhiteSpace(_webPushPublicKey))
+        {
+            _status = "WebPush nicht konfiguriert.";
+            return;
+        }
+
+        _busy = true;
+        try
+        {
+            var ok = await JS.InvokeAsync<bool>("immoPush.register", _webPushPublicKey, ApiClient.BaseAddress);
+            _status = ok ? "Browser-Push aktiviert." : "Aktivierung fehlgeschlagen.";
+        }
+        catch (JSException ex)
+        {
+            _status = $"JS-Fehler: {ex.Message}";
+        }
+        catch
+        {
+            _status = "Aktivierung fehlgeschlagen.";
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    async Task SendTestPush()
+    {
+        _busy = true;
+        try
+        {
+            var ok = await ApiClient.SendTestPushAsync();
+            _status = ok ? "Test-Push gesendet." : "Test-Push fehlgeschlagen.";
+        }
+        catch
+        {
+            _status = "Test-Push fehlgeschlagen.";
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

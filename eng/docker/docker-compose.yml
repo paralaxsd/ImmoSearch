@@ -12,6 +12,11 @@ services:
       ASPNETCORE_URLS: http://+:8080
       ConnectionStrings__DefaultConnection: Data Source=/data/immo.db
       Admin__Token: ${ADMIN_TOKEN:-}
+      Notifications__WebPush__Enabled: ${NOTIFICATIONS_WEBPUSH_ENABLED:-false}
+      Notifications__WebPush__PublicKey: ${NOTIFICATIONS_WEBPUSH_PUBLICKEY:-}
+      Notifications__WebPush__PrivateKey: ${NOTIFICATIONS_WEBPUSH_PRIVATEKEY:-}
+      Notifications__WebPush__Subject: ${NOTIFICATIONS_WEBPUSH_SUBJECT:-}
+      Cors__AllowedOrigins: ${CORS_ALLOWED_ORIGINS:-}
     volumes:
       - ${DATA_DIR:-../../assets/docker/data}:/data
     ports:

@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ImmoSearch.Infrastructure.Migrations
 {
     [DbContext(typeof(ImmoContext))]
-    [Migration("20260102211101_Initial")]
+    [Migration("20260106210048_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -40,8 +40,7 @@ namespace ImmoSearch.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("FirstSeenAt")
-                        .IsRequired()
+                    b.Property<DateTimeOffset>("FirstSeenAt")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Hash")
@@ -49,21 +48,19 @@ namespace ImmoSearch.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("LastSeenAt")
-                        .IsRequired()
+                    b.Property<DateTimeOffset>("LastSeenAt")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal?>("Price")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("PublishedAt")
+                    b.Property<DateTimeOffset?>("PublishedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal?>("Rooms")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("ScrapedAt")
-                        .IsRequired()
+                    b.Property<DateTimeOffset>("ScrapedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<decimal?>("Size")
@@ -96,6 +93,80 @@ namespace ImmoSearch.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Listings", (string)null);
+                });
+
+            modelBuilder.Entity("ImmoSearch.Domain.Models.ScrapeSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<int?>("IntervalSeconds")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("PageSize")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(20);
+
+                    b.Property<int?>("PrimaryAreaFrom")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("PrimaryAreaTo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("PrimaryPriceFrom")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int?>("PrimaryPriceTo")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Source")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ZipCode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Source")
+                        .IsUnique();
+
+                    b.ToTable("ScrapeSettings", (string)null);
+                });
+
+            modelBuilder.Entity("ImmoSearch.Domain.Models.WebPushSubscription", b =>
+                {
+                    b.Property<string>("Endpoint")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Auth")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("P256dh")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Endpoint");
+
+                    b.ToTable("WebPushSubscriptions", (string)null);
                 });
 #pragma warning restore 612, 618
         }
