@@ -1,9 +1,71 @@
 @page "/"
+@using ImmoSearch.Domain.Extensions
+@using ImmoSearch.Domain.Repositories
 
-<div class="mb-3 d-flex gap-2 align-items-center">
-    <button class="btn btn-primary" @onclick="Refresh" disabled="@_loading">Refresh</button>
+<div class="mb-3 d-flex gap-2 align-items-center flex-wrap">
+    <button class="btn btn-outline-secondary" @onclick="ToggleFilters">@(_showFilters ? "Hide filters" : "Filters")</button>
+    <button class="btn btn-primary" @onclick="ApplyFilters" disabled="@_loading">Apply</button>
+    <button class="btn btn-outline-secondary" @onclick="ClearFilters" disabled="@_loading">Clear</button>
     <span class="text-muted">Page @_page / @(_totalPages == 0 ? 1 : _totalPages)</span>
 </div>
+
+@if (_showFilters)
+{
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="row g-2">
+                <div class="col-12 col-md-3">
+                    <label class="form-label">City</label>
+                    <input class="form-control" @bind="_city" />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">ZIP</label>
+                    <input class="form-control" @bind="_zip" />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Source</label>
+                    <input class="form-control" @bind="_source" />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Price from</label>
+                    <input class="form-control" type="number" @bind="_minPrice" />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Price to</label>
+                    <input class="form-control" type="number" @bind="_maxPrice" />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Size from</label>
+                    <input class="form-control" type="number" @bind="_minSize" />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Size to</label>
+                    <input class="form-control" type="number" @bind="_maxSize" />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Rooms from</label>
+                    <input class="form-control" type="number" step="0.5" @bind="_minRooms" />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">Rooms to</label>
+                    <input class="form-control" type="number" step="0.5" @bind="_maxRooms" />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">From date</label>
+                    <input class="form-control" type="date" @bind="_fromDate" />
+                </div>
+                <div class="col-6 col-md-3">
+                    <label class="form-label">To date</label>
+                    <input class="form-control" type="date" @bind="_toDate" />
+                </div>
+                <div class="col-12 col-md-6">
+                    <label class="form-label">Search</label>
+                    <input class="form-control" @bind="_query" />
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @if (_loading)
 {
@@ -46,7 +108,7 @@ else if (_result is not null)
                     {
                         <tr>
                             <td>
-                                @if (!string.IsNullOrWhiteSpace(item.ThumbnailUrl))
+                                @if (item.ThumbnailUrl.HasText)
                                 {
                                     <a href="@item.Url" target="_blank" title="Open listing">
                                         <img src="@item.ThumbnailUrl" alt="thumb" class="img-thumbnail" style="max-width: 100px; max-height: 75px; object-fit: cover;" />
@@ -86,6 +148,20 @@ else if (_result is not null)
     ScrapeSettings? _settings;
     string? _sortBy = "scrapedat";
     bool _sortDesc = true;
+    bool _showFilters;
+
+    string? _city;
+    string? _zip;
+    string? _source;
+    decimal? _minPrice;
+    decimal? _maxPrice;
+    decimal? _minSize;
+    decimal? _maxSize;
+    decimal? _minRooms;
+    decimal? _maxRooms;
+    DateOnly? _fromDate;
+    DateOnly? _toDate;
+    string? _query;
 
     [Inject]
     public ListingApiClient ApiClient { get; set; } = default!;
@@ -104,7 +180,34 @@ else if (_result is not null)
 
         try
         {
-            _result = await ApiClient.GetListingsAsync(page, _pageSize, _sortBy, _sortDesc);
+            DateTimeOffset? fromDate = _fromDate.HasValue
+                ? new DateTimeOffset(_fromDate.Value.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc))
+                : null;
+            DateTimeOffset? toDate = _toDate.HasValue
+                ? new DateTimeOffset(_toDate.Value.ToDateTime(TimeOnly.MaxValue, DateTimeKind.Utc))
+                : null;
+
+            var filter = new ListingFilter(
+                City: _city,
+                Zip: _zip,
+                Source: _source,
+                MinPrice: _minPrice,
+                MaxPrice: _maxPrice,
+                MinSize: _minSize,
+                MaxSize: _maxSize,
+                MinRooms: _minRooms,
+                MaxRooms: _maxRooms,
+                FromDate: fromDate,
+                ToDate: toDate,
+                Query: _query);
+
+            var sort = new ListingSort(_sortBy, _sortDesc);
+
+            _result = await ApiClient.GetListingsAsync(
+                page,
+                _pageSize,
+                filter,
+                sort);
             if (_result is null)
             {
                 _error = true;
@@ -141,6 +244,30 @@ else if (_result is not null)
     }
 
     Task Refresh() => LoadPage(_page);
+
+    Task ApplyFilters()
+    {
+        _page = 1;
+        return LoadPage(_page);
+    }
+
+    Task ClearFilters()
+    {
+        _city = null;
+        _zip = null;
+        _source = null;
+        _minPrice = null;
+        _maxPrice = null;
+        _minSize = null;
+        _maxSize = null;
+        _minRooms = null;
+        _maxRooms = null;
+        _fromDate = null;
+        _toDate = null;
+        _query = null;
+        _page = 1;
+        return LoadPage(_page);
+    }
 
     Task SortBy(string key)
     {
@@ -184,4 +311,6 @@ else if (_result is not null)
         if (_page < _totalPages) return LoadPage(_page + 1);
         return Task.CompletedTask;
     }
+
+    void ToggleFilters() => _showFilters = !_showFilters;
 }

@@ -28,6 +28,7 @@ public sealed class ScrapeRunner(
 
         try
         {
+            _logger.LogInformation("Scrape run started");
             await using var scope = _scopeFactory.CreateAsyncScope();
 
             var adminRepo = scope.ServiceProvider.GetRequiredService<IAdminRepository>();
@@ -41,6 +42,7 @@ public sealed class ScrapeRunner(
             var orchestrator = scope.ServiceProvider.GetRequiredService<ScraperOrchestrator>();
             var inserted = await orchestrator.RunOnceAsync(cancellationToken);
             _lastRun = DateTimeOffset.UtcNow;
+            _logger.LogInformation("Scrape run finished: {Count} new listings", inserted.Count);
             return new ScrapeRunResult(false, false, inserted.Count, _lastRun);
         }
         finally

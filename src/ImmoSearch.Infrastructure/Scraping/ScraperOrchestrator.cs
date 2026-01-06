@@ -19,6 +19,7 @@ public sealed class ScraperOrchestrator(
         {
             try
             {
+                _logger.LogInformation("Starting scraper {Source}", scraper.Source);
                 var items = await scraper.ScrapeAsync(cancellationToken);
                 aggregated.AddRange(items);
                 _logger.LogInformation("{Source} returned {Count} listings", scraper.Source, items.Count);

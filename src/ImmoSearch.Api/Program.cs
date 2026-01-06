@@ -10,6 +10,7 @@ using ImmoSearch.Infrastructure.Data;
 using ImmoSearch.Infrastructure.Scraping;
 using ImmoSearch.Infrastructure.Scraping.Options;
 using ImmoSearch.Infrastructure.Scraping.Scrapers;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Scalar.AspNetCore;
 
@@ -40,16 +41,14 @@ app.MapHealthChecks("/health");
 
 app.MapGet("/listings", async (
     IListingRepository repository,
-    int page = 1,
-    int pageSize = 20,
-    string? city = null,
-    decimal? minPrice = null,
-    decimal? maxPrice = null,
-    string? sortBy = null,
-    bool sortDesc = true) =>
+    int page,
+    int pageSize,
+    [AsParameters] ListingFilter filter,
+    [AsParameters] ListingSort sort) =>
 {
     var request = new PageRequest(page, pageSize);
-    var result = await repository.GetPageAsync(request, city, minPrice, maxPrice, sortBy, sortDesc);
+
+    var result = await repository.GetPageAsync(request, filter, sort);
     return Results.Ok(result);
 }).WithName("GetListings");
 
@@ -88,7 +87,7 @@ app.MapPost("/admin/listings/reset", async (IAdminRepository repo, IOptions<Admi
     return Results.Ok();
 }).WithName("ResetListings");
 
-app.MapGet("/admin/status", (IOptions<AdminOptions> options) => Results.Ok(new { requiresToken = !string.IsNullOrWhiteSpace(options.Value.Token) }))
+app.MapGet("/admin/status", (IOptions<AdminOptions> options) => Results.Ok(new { requiresToken = options.Value.Token.HasText }))
     .WithName("AdminStatus");
 
 app.MapPost("/admin/scrape", async (ScrapeRunner runner, IOptions<AdminOptions> options, HttpContext context, CancellationToken cancellationToken) =>

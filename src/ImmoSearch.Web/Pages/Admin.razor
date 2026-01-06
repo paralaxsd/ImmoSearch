@@ -53,7 +53,7 @@
             <button class="btn btn-warning" @onclick="TriggerScrape" disabled="@Disabled">Scrape now</button>
             <button class="btn btn-danger" @onclick="DeleteListings" disabled="@Disabled">Reset listings</button>
             <button class="btn btn-outline-secondary" @onclick="ResetSettings" disabled="@Disabled">Reset settings</button>
-            @if (!string.IsNullOrWhiteSpace(_status))
+            @if (_status.HasText)
             {
                 <span class="text-muted align-self-center">@_status</span>
             }

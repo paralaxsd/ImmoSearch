@@ -2,7 +2,7 @@
 
 Please chat with me in German and let's be on a first name basis, but still code in US-English.
 Remember my personal C# style. For other languages the same principles apply.
-- Most of my rules service one purpose: reducing cognitive load when reading code.
+- Most of my rules service one purpose: reducing cognitive load when reading code. Modern C# features usually align with this goal, so please prefer them over traditional constructs.
 - Never encode implicit knowledge explicitly. I prefer my code short and concise. Consequently, private fields, internal classes etc need no explicit visibility. Wherever possible I'd also prefer targeted new instantiations, variables declared with var and expression based returns rather than statements.
 - Please ensure that source code lines are no longer than 100 charaters.
 - Prefer sealed types unless it's absolutely clear that we want to keep the type definition open for inheritors.

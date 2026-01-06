@@ -1,7 +1,9 @@
 using System.Net.Http.Json;
 using ImmoSearch.Domain.Models;
 using ImmoSearch.Domain.Pagination;
+using ImmoSearch.Domain.Repositories;
 using System.Net;
+using ImmoSearch.Domain.Extensions;
 
 namespace ImmoSearch.Web.Services;
 
@@ -12,14 +14,34 @@ public class ListingApiClient(HttpClient httpClient)
     public string? AdminToken { get; set; }
 
     public async Task<PagedResult<Listing>?> GetListingsAsync(
-        int page = 1,
-        int pageSize = 20,
-        string? sortBy = null,
-        bool sortDesc = true,
+        int page,
+        int pageSize,
+        ListingFilter filter,
+        ListingSort sort,
         CancellationToken cancellationToken = default)
     {
-        var query = $"/listings?page={page}&pageSize={pageSize}&sortDesc={sortDesc.ToString().ToLowerInvariant()}";
-        if (!string.IsNullOrWhiteSpace(sortBy)) query += $"&sortBy={Uri.EscapeDataString(sortBy)}";
+        filter ??= new ListingFilter();
+        sort ??= new ListingSort();
+
+        var query = $"/listings?page={page}&pageSize={pageSize}&sortDesc={sort.SortDesc.ToString().ToLowerInvariant()}";
+        void Add(string key, string? value)
+        {
+            if (value.HasText) query += $"&{key}={Uri.EscapeDataString(value)}";
+        }
+
+        Add("city", filter.City);
+        Add("zip", filter.Zip);
+        Add("source", filter.Source);
+        if (filter.MinPrice.HasValue) query += $"&minPrice={filter.MinPrice.Value}";
+        if (filter.MaxPrice.HasValue) query += $"&maxPrice={filter.MaxPrice.Value}";
+        if (filter.MinSize.HasValue) query += $"&minSize={filter.MinSize.Value}";
+        if (filter.MaxSize.HasValue) query += $"&maxSize={filter.MaxSize.Value}";
+        if (filter.MinRooms.HasValue) query += $"&minRooms={filter.MinRooms.Value}";
+        if (filter.MaxRooms.HasValue) query += $"&maxRooms={filter.MaxRooms.Value}";
+        if (filter.FromDate.HasValue) query += $"&fromDate={Uri.EscapeDataString(filter.FromDate.Value.ToString("O"))}";
+        if (filter.ToDate.HasValue) query += $"&toDate={Uri.EscapeDataString(filter.ToDate.Value.ToString("O"))}";
+        Add("q", filter.Query);
+        if (sort.SortBy.HasText) query += $"&sortBy={Uri.EscapeDataString(sort.SortBy)}";
 
         var response = await _httpClient.GetAsync(query, cancellationToken);
 
@@ -87,7 +109,7 @@ public class ListingApiClient(HttpClient httpClient)
 
     void AddAdminHeader(HttpRequestMessage req)
     {
-        if (!string.IsNullOrWhiteSpace(AdminToken))
+        if (AdminToken.HasText)
             req.Headers.TryAddWithoutValidation("X-Admin-Token", AdminToken);
     }
 
