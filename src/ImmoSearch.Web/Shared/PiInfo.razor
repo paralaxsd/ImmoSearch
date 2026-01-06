@@ -1,6 +1,11 @@
 @using System.Globalization
 @inject IWebHostEnvironment HostEnv
 
+@if (_showDetails)
+{
+    <div class="pi-overlay" @onclick="HideDetails"></div>
+}
+
 <div class="pi-container">
     <a href="#" class="pi-symbol"
        title="Developer info"
@@ -30,4 +35,6 @@
         : ThisAssembly.GitCommitUrl;
 
     void ToggleDetails() => _showDetails = !_showDetails;
+
+    void HideDetails() => _showDetails = false;
 }

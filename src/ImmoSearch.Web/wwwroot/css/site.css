@@ -75,6 +75,13 @@ body {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
+.pi-overlay {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+  z-index: 900;
+}
+
 .pi-heading {
   display: flex;
   align-items: center;
