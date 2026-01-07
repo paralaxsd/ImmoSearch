@@ -23,7 +23,7 @@ window.immoPush = {
             p256dh: arrayBufferToBase64(sub.getKey('p256dh')),
             auth: arrayBufferToBase64(sub.getKey('auth'))
         };
-        const response = await fetch(`${apiBase}/notifications/webpush/subscribe`, {
+        const response = await fetch(`/api/notifications/webpush/subscribe`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)

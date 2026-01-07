@@ -1,7 +1,7 @@
-using System.Globalization;
-using ImmoSearch.Web.Services;
+using ImmoSearch.Web.Endpoints;
 using ImmoSearch.Web.Options;
-using ImmoSearch.Web.Models;
+using ImmoSearch.Web.Services;
+using System.Globalization;
 
 PrepareApplication();
 
@@ -9,18 +9,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.Configure<AppInfoOptions>(builder.Configuration.GetSection("AppInfo"));
-builder.Services.AddHttpClient<ListingApiClient>((sp, client) =>
-{
-    var configuration = sp.GetRequiredService<IConfiguration>();
-    var baseUrl = configuration["ApiBaseUrl"] ?? "https://localhost:5001";
-    client.BaseAddress = new Uri(baseUrl);
-});
-builder.Services.AddHttpClient<StatusApiClient>((sp, client) =>
-{
-    var configuration = sp.GetRequiredService<IConfiguration>();
-    var baseUrl = configuration["ApiBaseUrl"] ?? "https://localhost:5001";
-    client.BaseAddress = new Uri(baseUrl);
-});
+builder.Services.AddHttpClient<ListingApiClient>(AssignClientBaseAddressFrom);
+builder.Services.AddHttpClient<StatusApiClient>(AssignClientBaseAddressFrom);
+builder.Services.AddHttpClient("ApiProxy", AssignClientBaseAddressFrom);
 
 var app = builder.Build();
 
@@ -35,6 +26,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
+app.MapWebEndpoints();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
@@ -47,4 +39,10 @@ static void PrepareApplication()
     CultureInfo.DefaultThreadCurrentUICulture = culture;
 
     Console.WriteLine($"[{DateTime.Now}] Launching ImmoSearch.Web v{ThisAssembly.AssemblyInformationalVersion}");
+}
+
+static void AssignClientBaseAddressFrom(IServiceProvider sp, HttpClient httpClient)
+{
+    var baseUrl = sp.GetRequiredService<IConfiguration>()["ApiBaseUrl"] ?? "https://localhost:5001";
+    httpClient.BaseAddress = new(baseUrl);
 }
