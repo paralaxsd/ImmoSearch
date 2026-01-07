@@ -1,5 +1,7 @@
 @page "/notifications"
 @using ImmoSearch.Web.Models
+@using System.Text.Json
+@using System.Text.Json.Serialization
 @using Microsoft.JSInterop
 
 <div class="card shadow-sm mb-3">
@@ -15,8 +17,11 @@
         else
         {
             <div class="d-flex gap-2 flex-wrap">
-                <button class="btn btn-outline-primary" @onclick="EnablePush" disabled="@_busy">Aktivieren</button>
-                <button class="btn btn-outline-success" @onclick="SendTestPush" disabled="@_busy">Test-Push senden</button>
+                <button class="btn btn-outline-primary" @onclick="EnablePush" disabled="@_busy">@_buttonText</button>
+                @if (_isSubscribed)
+                {
+                    <button class="btn btn-outline-success" @onclick="SendTestPush" disabled="@_busy">Test-Push senden</button>
+                }
                 @if (!string.IsNullOrWhiteSpace(_status))
                 {
                     <span class="text-muted align-self-center">@_status</span>
@@ -27,10 +32,18 @@
 </div>
 
 @code {
+    sealed record SubscriptionData(
+        [property: JsonPropertyName("endpoint")] string Endpoint,
+        [property: JsonPropertyName("p256dh")] string P256dh,
+        [property: JsonPropertyName("auth")] string Auth);
+
     bool _webPushEnabled;
     string? _webPushPublicKey;
     string _status = string.Empty;
     bool _busy;
+    bool _isSubscribed;
+    string _buttonText => _isSubscribed ? "Deaktivieren" : "Aktivieren";
+    SubscriptionData? _subscription;
 
     [Inject] StatusApiClient StatusClient { get; set; } = default!;
     [Inject] ListingApiClient ApiClient { get; set; } = default!;
@@ -39,6 +52,47 @@
     protected override async Task OnInitializedAsync()
     {
         await LoadConfig();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await CheckSubscription();
+        }
+    }
+
+    async Task CheckSubscription()
+    {
+        try
+        {
+            var permission = await JS.InvokeAsync<string>("eval", "Notification.permission");
+            if (permission != "granted")
+            {
+                _isSubscribed = false;
+                _subscription = null;
+                await JS.InvokeVoidAsync("eval", "localStorage.removeItem('webPushSubscription')");
+                return;
+            }
+
+            var subJson = await JS.InvokeAsync<string>("eval", "localStorage.getItem('webPushSubscription')");
+            if (!string.IsNullOrWhiteSpace(subJson))
+            {
+                await JS.InvokeVoidAsync("console.log", $"subJson: {subJson}");
+                _subscription = JsonSerializer.Deserialize<SubscriptionData>(subJson);
+                await JS.InvokeVoidAsync("console.log", $"Deserialized: {_subscription}");
+                _isSubscribed = _subscription is not null && !string.IsNullOrWhiteSpace(_subscription.Endpoint);
+                await JS.InvokeVoidAsync("console.log", $"Subscription loaded: {_isSubscribed}, Endpoint: {_subscription?.Endpoint}");
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("console.log", "No subscription in localStorage");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.log", $"CheckSubscription error: {ex.Message}");
+        }
     }
 
     async Task LoadConfig()
@@ -69,16 +123,44 @@
         _busy = true;
         try
         {
-            var ok = await JS.InvokeAsync<bool>("immoPush.register", _webPushPublicKey, ApiClient.BaseAddress);
-            _status = ok ? "Browser-Push aktiviert." : "Aktivierung fehlgeschlagen.";
+            if (_isSubscribed && _subscription is not null && !string.IsNullOrWhiteSpace(_subscription.Endpoint))
+            {
+                // Deaktivieren
+                var response = await ApiClient.UnsubscribePushAsync(_subscription.Endpoint);
+                if (response.IsSuccessStatusCode)
+                {
+                    _isSubscribed = false;
+                    _subscription = null;
+                    await JS.InvokeVoidAsync("eval", "localStorage.removeItem('webPushSubscription')");
+                    _status = "WebPush deaktiviert. Hinweis: Die Browser-Permission bleibt bestehen. Entfernen Sie sie manuell in den Browser-Einstellungen, um den Dialog beim nächsten Aktivieren zu sehen.";
+                }
+                else
+                {
+                    _status = $"Deaktivierung fehlgeschlagen (Status: {response.StatusCode}).";
+                }
+            }
+            else
+            {
+                // Aktivieren
+                var ok = await JS.InvokeAsync<bool>("immoPush.register", _webPushPublicKey, ApiClient.BaseAddress);
+                if (ok)
+                {
+                    await CheckSubscription(); // Nach Aktivieren neu prüfen
+                    _status = "WebPush aktiviert.";
+                }
+                else
+                {
+                    _status = "Aktivierung fehlgeschlagen.";
+                }
+            }
         }
         catch (JSException ex)
         {
             _status = $"JS-Fehler: {ex.Message}";
         }
-        catch
+        catch (Exception ex)
         {
-            _status = "Aktivierung fehlgeschlagen.";
+            _status = $"Deaktivierung fehlgeschlagen: {ex.Message}";
         }
         finally
         {

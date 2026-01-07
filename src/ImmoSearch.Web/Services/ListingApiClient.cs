@@ -96,6 +96,12 @@ public class ListingApiClient(HttpClient httpClient)
         return response.IsSuccessStatusCode;
     }
 
+    public async Task<HttpResponseMessage> UnsubscribePushAsync(string endpoint, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.DeleteAsync($"/notifications/webpush/subscribe/{Uri.EscapeDataString(endpoint)}", cancellationToken);
+        return response;
+    }
+
     public async Task<bool> DeleteListingsAsync(CancellationToken cancellationToken = default)
     {
         using var req = new HttpRequestMessage(HttpMethod.Post, "/admin/listings/reset");

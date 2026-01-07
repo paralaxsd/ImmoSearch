@@ -1,6 +1,3 @@
-using ImmoSearch.Api.Endpoints;
-using ImmoSearch.Api.Options;
-
 namespace ImmoSearch.Api.Endpoints;
 
 public static class ApiEndpointExtensions
@@ -11,7 +8,6 @@ public static class ApiEndpointExtensions
         AdminEndpoints.Map(app);
         StatusEndpoints.Map(app);
         NotificationsEndpoints.Map(app);
-        NotificationsEndpoints.MapTest(app);
         return app;
     }
 }

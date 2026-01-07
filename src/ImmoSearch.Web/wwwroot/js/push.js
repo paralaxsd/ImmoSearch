@@ -18,17 +18,24 @@ window.immoPush = {
             userVisibleOnly: true,
             applicationServerKey: urlBase64ToUint8Array(publicKey)
         });
+        console.log("sub:", sub);
+        console.log("sub.endpoint:", sub.endpoint);
         const payload = {
             endpoint: sub.endpoint,
             p256dh: arrayBufferToBase64(sub.getKey('p256dh')),
             auth: arrayBufferToBase64(sub.getKey('auth'))
         };
+        console.log("Payload:", payload);
         const response = await fetch(`/api/notifications/webpush/subscribe`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        return response.ok;
+        if (response.ok) {
+            localStorage.setItem('webPushSubscription', JSON.stringify(payload));
+            return true;
+        }
+        return false;
     }
 };
 
