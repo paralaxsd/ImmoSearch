@@ -1,13 +1,19 @@
-using System.Collections.Generic;
 using JetBrains.Annotations;
 using Nuke.Common;
+using Nuke.Common.CI.GitHubActions;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.Utilities.Collections;
+using System.Collections.Generic;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 
+[GitHubActions(
+    "compile", GitHubActionsImage.UbuntuLatest,
+    OnPushBranches = ["**"], InvokedTargets = [nameof(Compile)], ImportSecrets = [],
+    Progress = true, FetchDepth = 0
+)]
 sealed class Build : NukeBuild
 {
     /******************************************************************************************
@@ -61,7 +67,7 @@ sealed class Build : NukeBuild
 
     void RestoreAll()
     {
-        DotNetToolRestore(s => s.SetConfigFile(ConfigDir / "dotnet-tools.json"));
+        DotNetToolRestore();
         DotNetRestore();
     }
 
