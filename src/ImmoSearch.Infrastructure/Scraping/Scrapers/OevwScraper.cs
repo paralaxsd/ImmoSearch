@@ -1,15 +1,16 @@
-using HtmlAgilityPack;
 using ImmoSearch.Domain.Models;
+using ImmoSearch.Domain.Extensions;
 using System.Diagnostics;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using ImmoSearch.Domain.Extensions;
+using HtmlAgilityPack;
+using static System.StringSplitOptions;
 
 namespace ImmoSearch.Infrastructure.Scraping.Scrapers;
 
-sealed class OevwScraper(HttpClient http) : IScraper
+sealed class OevwScraper(HttpClient http, IScrapeSettingsProvider settingsProvider) : IScraper
 {
     /******************************************************************************************
      * PROPERTIES
@@ -21,15 +22,31 @@ sealed class OevwScraper(HttpClient http) : IScraper
      * ***************************************************************************************/
     public async Task<IReadOnlyList<Listing>> ScrapeAsync(CancellationToken token)
     {
-        var (csrf, cookies) = await GetCsrfAndCookiesAsync(token);
-        if (string.IsNullOrWhiteSpace(csrf)) return [];
-        var (firstHtml, maxPage) = await PostAndGetMaxPageAsync(csrf, cookies, token);
-        var all = new List<Listing>(ParseListings(firstHtml));
-        for (var page = 2; page <= maxPage; page++)
+        if(await settingsProvider.GetAsync(token) is not{} settings)
         {
-            if (!Debugger.IsAttached) await Task.Delay(1000, token);
-            var html = await GetPageHtmlAsync(page, cookies, token);
-            all.AddRange(ParseListings(html));
+            return [];
+        };
+        
+        var (csrf, cookies) = await GetCsrfAndCookiesAsync(token);
+        
+        if (csrf.NullOrWhitespace)
+        {
+            return [];
+        }
+
+        var zipCodes = settings.ZipCode.Split(',', RemoveEmptyEntries | TrimEntries);
+        var all = new List<Listing>();
+
+        foreach (var zip in zipCodes)
+        {
+            var (firstHtml, maxPage) = await PostAndGetMaxPageAsync(csrf, cookies, settings with { ZipCode = zip }, token);
+            all.AddRange(ParseListings(firstHtml));
+            for (var page = 2; page <= maxPage; page++)
+            {
+                if (!Debugger.IsAttached) await Task.Delay(1000, token);
+                var html = await GetPageHtmlAsync(page, cookies, token);
+                all.AddRange(ParseListings(html));
+            }
         }
         return all;
     }
@@ -39,49 +56,51 @@ sealed class OevwScraper(HttpClient http) : IScraper
         var getReq = new HttpRequestMessage(HttpMethod.Get, "https://www.oevw.at/suche");
         getReq.Headers.Add("User-Agent", "Mozilla/5.0 (compatible; ImmoSearchBot/1.0)");
         getReq.Headers.Add("Accept", "text/html,application/xhtml+xml,application/xml");
-
         using var getResp = await new HttpClient().SendAsync(getReq, token);
         var html = await getResp.Content.ReadAsStringAsync(token);
-        
         var csrf = Regex.Match(html, "var csrfToken = \"([^\"]+)\"").Groups[1].Value;
         var cookies = getResp.Headers.TryGetValues("Set-Cookie", out var setCookies)
             ? setCookies.Select(x => x.Split(';')[0]).JoinedBy("; ")
             : string.Empty;
-
         return (csrf, cookies);
     }
 
-    async Task<(string html, int maxPage)> PostAndGetMaxPageAsync
-        (string csrf, string cookies, CancellationToken token)
+    async Task<(string html, int maxPage)> PostAndGetMaxPageAsync(
+        string csrf, string cookies, ScrapeSettings s, CancellationToken token)
     {
-        var postReq = CreatePostRequestFrom(csrf, cookies);
+        var postReq = CreatePostRequestFrom(csrf, cookies, s);
         using var postResp = await http.SendAsync(postReq, token);
-
         var html = await postResp.Content.ReadAsStringAsync(token);
         var doc = new HtmlDocument();
         doc.LoadHtml(html);
         var maxPage = GetMaxPage(doc);
-
         return (html, maxPage);
     }
 
-    static HttpRequestMessage CreatePostRequestFrom(string csrf, string cookies)
+    static HttpRequestMessage CreatePostRequestFrom(string csrf, string cookies, ScrapeSettings s)
     {
+        var legalform = s.TransferType?.Trim().ToLowerInvariant() switch
+        {
+            "mieten" => "rent",
+            "kaufen" => "buy",
+            _ => ""
+        };
         var payload = new Dictionary<string, object?>
         {
             ["unittypes"] = "apartment",
-            ["legalform"] = "buy",
-            ["zips"] = "1220",
+            ["legalform"] = legalform,
+            ["zips"] = s.ZipCode,
             ["rooms"] = new List<object>(),
-            ["area_from"] = "",
-            ["area_to"] = "",
-            ["price_to"] = "",
-            ["available_immediately"] = "",
-            ["only_new"] = ""
+            ["area_from"] = s.PrimaryAreaFrom?.ToString() ?? string.Empty,
+            ["area_to"] = s.PrimaryAreaTo?.ToString() ?? string.Empty,
+            ["price_to"] = s.PrimaryPriceTo?.ToString() ?? string.Empty,
+            ["available_immediately"] = string.Empty,
+            ["only_new"] = string.Empty
         };
+        var json = JsonSerializer.Serialize(payload);
         var postReq = new HttpRequestMessage(HttpMethod.Post, "https://www.oevw.at/suche/filter")
         {
-            Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json")
+            Content = new StringContent(json, Encoding.UTF8, "application/json")
         };
         postReq.Headers.Add("User-Agent", "Mozilla/5.0 (compatible; ImmoSearchBot/1.0)");
         postReq.Headers.Add("Accept", "application/json, text/plain, */*");
@@ -89,7 +108,6 @@ sealed class OevwScraper(HttpClient http) : IScraper
         postReq.Headers.Add("X-Requested-With", "XMLHttpRequest");
         postReq.Headers.Add("Origin", "https://www.oevw.at");
         postReq.Headers.Add("X-CSRF-Token", csrf);
-
         if (cookies.HasContent)
             postReq.Headers.Add("Cookie", cookies);
         return postReq;
@@ -128,7 +146,6 @@ sealed class OevwScraper(HttpClient http) : IScraper
         var items = doc.DocumentNode
             .SelectNodes("//li[contains(@class,'thumblist__item')]")
             .OrEmpty();
-
         return items.Select(CreateListingFrom).ToArray();
     }
 
@@ -144,8 +161,7 @@ sealed class OevwScraper(HttpClient http) : IScraper
         var size = subheading?.SelectSingleNode(".//li[contains(text(),'m²')]")?.InnerText.Trim().Replace(" m²", "").Replace(",", ".") ?? string.Empty;
         var textList = item.SelectSingleNode(".//div[contains(@class,'thumb__text')]//ul[contains(@class,'thumb__text__list')]");
         var rooms = textList?.SelectSingleNode(".//li[contains(text(),'Zimmer')]")?.InnerText.Trim().Replace(" Zimmer", "") ?? string.Empty;
-
-        var listing = new Listing
+        return new Listing
         {
             Source = "oevw",
             ExternalId = url ?? string.Empty,
@@ -156,6 +172,5 @@ sealed class OevwScraper(HttpClient http) : IScraper
             Url = !string.IsNullOrWhiteSpace(url) ? "https://www.oevw.at" + url : string.Empty,
             ThumbnailUrl = !string.IsNullOrWhiteSpace(img) ? "https://www.oevw.at" + img : null
         };
-        return listing;
     }
 }

@@ -136,17 +136,17 @@ public sealed class ImmobilienScout24Scraper(
 
     string BuildListingUrlPath(ScrapeSettings settings, int zip)
     {
+        var transferType = settings.TransferType?.Trim().ToLowerInvariant();
+        var typeSegment = transferType == "mieten" ? "immobilie-mieten" : "immobilie-kaufen";
         var query = new List<string>
         {
             $"primaryAreaFrom={settings.PrimaryAreaFrom ?? 0}",
             $"primaryAreaTo={settings.PrimaryAreaTo ?? 0}"
         };
-
         if (settings.PrimaryPriceFrom > 0) query.Add($"primaryPriceFrom={settings.PrimaryPriceFrom}");
         if (settings.PrimaryPriceTo > 0) query.Add($"primaryPriceTo={settings.PrimaryPriceTo}");
-
         var qs = query.JoinedBy("&");
-        return $"/regional/{zip.ToString(CultureInfo.InvariantCulture)}/immobilie-kaufen?{qs}";
+        return $"/regional/{zip.ToString(CultureInfo.InvariantCulture)}/{typeSegment}?{qs}";
     }
 
     static string? ExtractCity(string? address)

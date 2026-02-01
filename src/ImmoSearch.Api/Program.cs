@@ -1,17 +1,15 @@
 using ImmoSearch.Api;
+using ImmoSearch.Api.Endpoints;
+using ImmoSearch.Api.Notifications;
+using ImmoSearch.Api.Options;
 using ImmoSearch.Api.Scraping;
+using ImmoSearch.Domain.Repositories;
 using ImmoSearch.Infrastructure;
 using ImmoSearch.Infrastructure.Data;
-using Microsoft.EntityFrameworkCore;
+using ImmoSearch.Infrastructure.Repositories;
 using ImmoSearch.Infrastructure.Scraping;
 using ImmoSearch.Infrastructure.Scraping.Options;
-using ImmoSearch.Infrastructure.Scraping.Scrapers;
-using ImmoSearch.Api.Endpoints;
-using ImmoSearch.Api.Options;
-using ImmoSearch.Domain.Repositories;
-using ImmoSearch.Infrastructure.Repositories;
-using ImmoSearch.Api.Notifications;
-using System.Linq;
+using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 
 PrepareApplication();
