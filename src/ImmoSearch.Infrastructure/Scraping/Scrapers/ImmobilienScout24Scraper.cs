@@ -3,18 +3,15 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using ImmoSearch.Domain.Models;
 using ImmoSearch.Domain.Helpers;
-using ImmoSearch.Infrastructure.Scraping.Options;
 using ImmoSearch.Domain.Extensions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace ImmoSearch.Infrastructure.Scraping.Scrapers;
 
 public sealed class ImmobilienScout24Scraper(
     ILogger<ImmobilienScout24Scraper> logger,
     IHttpClientFactory httpClientFactory,
-    IScrapeSettingsProvider settingsProvider,
-    IOptions<ImmobilienScout24Options> defaults) : IScraper
+    IScrapeSettingsProvider settingsProvider) : IScraper
 {
     static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)
     {
@@ -30,21 +27,20 @@ public sealed class ImmobilienScout24Scraper(
     readonly ILogger<ImmobilienScout24Scraper> _logger = logger;
     readonly IHttpClientFactory _httpClientFactory = httpClientFactory;
     readonly IScrapeSettingsProvider _settingsProvider = settingsProvider;
-    readonly ImmobilienScout24Options _defaults = defaults.Value;
 
     public string Source => "immoscout24_at";
 
     public async Task<IReadOnlyList<Listing>> ScrapeAsync(CancellationToken cancellationToken)
     {
         var listings = new List<Listing>();
-        var options = await _settingsProvider.GetAsync(cancellationToken);
-        if (options is null)
+        var settings = await _settingsProvider.GetAsync(cancellationToken);
+        if (settings is null)
         {
             _logger.LogInformation("{Source}: no scrape settings stored, skipping", Source);
             return listings;
         }
 
-        var zipCodes = ZipCodeParser.TryParse(options.ZipCode);
+        var zipCodes = ZipCodeParser.TryParse(settings.ZipCode);
         if (zipCodes is null)
         {
             _logger.LogInformation("{Source}: no valid zip codes configured, skipping", Source);
@@ -58,7 +54,7 @@ public sealed class ImmobilienScout24Scraper(
 
         foreach (var zip in zipCodes)
         {
-            var requestUri = BuildGraphQlRequestUri(options, zip);
+            var requestUri = BuildGraphQlRequestUri(settings, zip);
 
             var response = await client.GetAsync(requestUri, cancellationToken);
             response.EnsureSuccessStatusCode();
@@ -78,7 +74,7 @@ public sealed class ImmobilienScout24Scraper(
                 if (hit.ExposeId.NullOrWhitespace) continue;
                 var externalId = hit.ExposeId!;
                 var url = hit.Links?.AbsoluteUrl ?? string.Empty;
-                if (url.NullOrWhitespace) url = $"{options.BaseUrl.TrimEnd('/')}/expose/{externalId}";
+                if (url.NullOrWhitespace) url = $"https://www.immobilienscout24.at/expose/{externalId}";
                 var thumb = hit.PrimaryPictureImageProps?.Src;
 
                 var title = hit.Headline.NullOrWhitespace ? externalId : hit.Headline!.Trim();
@@ -109,16 +105,16 @@ public sealed class ImmobilienScout24Scraper(
         return listings;
     }
 
-    string BuildGraphQlRequestUri(ImmobilienScout24Options options, int zip)
+    string BuildGraphQlRequestUri(ScrapeSettings settings, int zip)
     {
-        var urlPath = BuildListingUrlPath(options, zip);
+        var urlPath = BuildListingUrlPath(settings, zip);
         var variables = new Dictionary<string, object?>
         {
             ["aspectRatio"] = 1.77,
             ["params"] = new Dictionary<string, object?>
             {
                 ["URL"] = urlPath,
-                ["size"] = options.PageSize
+                ["size"] = settings.PageSize
             }
         };
 
@@ -134,20 +130,20 @@ public sealed class ImmobilienScout24Scraper(
         var variablesParam = Uri.EscapeDataString(JsonSerializer.Serialize(variables, RawJsonOptions));
         var extensionsParam = Uri.EscapeDataString(JsonSerializer.Serialize(extensions, RawJsonOptions));
 
-        return $"{options.BaseUrl.TrimEnd('/')}/portal/graphql?operationName=getDataByURL" +
+        return $"https://www.immobilienscout24.at/portal/graphql?operationName=getDataByURL" +
                $"&variables={variablesParam}&extensions={extensionsParam}";
     }
 
-    string BuildListingUrlPath(ImmobilienScout24Options options, int zip)
+    string BuildListingUrlPath(ScrapeSettings settings, int zip)
     {
         var query = new List<string>
         {
-            $"primaryAreaFrom={options.PrimaryAreaFrom}",
-            $"primaryAreaTo={options.PrimaryAreaTo}"
+            $"primaryAreaFrom={settings.PrimaryAreaFrom ?? 0}",
+            $"primaryAreaTo={settings.PrimaryAreaTo ?? 0}"
         };
 
-        if (options.PrimaryPriceFrom > 0) query.Add($"primaryPriceFrom={options.PrimaryPriceFrom}");
-        if (options.PrimaryPriceTo > 0) query.Add($"primaryPriceTo={options.PrimaryPriceTo}");
+        if (settings.PrimaryPriceFrom > 0) query.Add($"primaryPriceFrom={settings.PrimaryPriceFrom}");
+        if (settings.PrimaryPriceTo > 0) query.Add($"primaryPriceTo={settings.PrimaryPriceTo}");
 
         var qs = query.JoinedBy("&");
         return $"/regional/{zip.ToString(CultureInfo.InvariantCulture)}/immobilie-kaufen?{qs}";

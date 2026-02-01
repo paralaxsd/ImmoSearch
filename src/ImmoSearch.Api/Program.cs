@@ -28,7 +28,6 @@ builder.Services.AddHostedService<ScrapeHostedService>();
 builder.Services.AddHealthChecks().AddDbContextCheck<ImmoContext>();
 builder.Services.Configure<AdminOptions>(builder.Configuration.GetSection("Admin"));
 builder.Services.Configure<ScrapingOptions>(builder.Configuration.GetSection("Scraping"));
-builder.Services.Configure<ImmobilienScout24Options>(builder.Configuration.GetSection("Scraping:Sources:ImmobilienScout24"));
 builder.Services.Configure<NotificationOptions>(builder.Configuration.GetSection("Notifications"));
 builder.Services.AddScoped<IWebPushSubscriptionRepository, EfWebPushSubscriptionRepository>();
 builder.Services.AddScoped<IWebPushSender, WebPushSender>();
