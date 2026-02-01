@@ -1,5 +1,8 @@
+using System.Diagnostics;
+
 namespace ImmoSearch.Domain.Models;
 
+[DebuggerDisplay($"{{{nameof(DebuggerDisplay)}}}")]
 public class Listing
 {
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -18,4 +21,6 @@ public class Listing
     public DateTimeOffset LastSeenAt { get; set; } = DateTimeOffset.UtcNow;
     public DateTimeOffset ScrapedAt { get; set; } = DateTimeOffset.UtcNow;
     public string Hash { get; set; } = string.Empty;
+
+    string DebuggerDisplay => $"[{Source}] {Title}";
 }

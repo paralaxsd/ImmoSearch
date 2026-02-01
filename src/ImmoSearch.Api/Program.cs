@@ -19,7 +19,12 @@ PrepareApplication();
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddOpenApi();
+
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<ScraperOrchestrator>();
+builder.Services.AddSingleton<ScrapeRunner>();
+builder.Services.AddHostedService<ScrapeHostedService>();
+
 builder.Services.AddHealthChecks().AddDbContextCheck<ImmoContext>();
 builder.Services.Configure<AdminOptions>(builder.Configuration.GetSection("Admin"));
 builder.Services.Configure<ScrapingOptions>(builder.Configuration.GetSection("Scraping"));
@@ -47,10 +52,6 @@ builder.Services.AddCors(options =>
         .AllowAnyHeader()
         .AllowAnyMethod()));
 builder.Services.AddHttpClient();
-builder.Services.AddScoped<IScraper, ImmobilienScout24Scraper>();
-builder.Services.AddScoped<ScraperOrchestrator>();
-builder.Services.AddSingleton<ScrapeRunner>();
-builder.Services.AddHostedService<ScrapeHostedService>();
 
 var app = builder.Build();
 

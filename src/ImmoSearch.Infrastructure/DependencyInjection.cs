@@ -1,9 +1,8 @@
-using System;
-using System.IO;
 using ImmoSearch.Domain.Repositories;
 using ImmoSearch.Infrastructure.Data;
 using ImmoSearch.Infrastructure.Repositories;
 using ImmoSearch.Infrastructure.Scraping;
+using ImmoSearch.Infrastructure.Scraping.Scrapers;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -29,6 +28,8 @@ public static class DependencyInjection
         services.AddScoped<IListingRepository, ListingRepository>();
         services.AddScoped<IAdminRepository, AdminRepository>();
         services.AddScoped<IScrapeSettingsProvider, ScrapeSettingsProvider>();
+        services.AddScoped<IScraper, ImmobilienScout24Scraper>();
+        services.AddScoped<IScraper, OevwScraper>();
 
         return services;
     }

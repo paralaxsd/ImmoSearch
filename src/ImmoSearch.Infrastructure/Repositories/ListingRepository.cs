@@ -45,9 +45,11 @@ public sealed class ListingRepository(ImmoContext dbContext, ILogger<ListingRepo
         var now = DateTimeOffset.UtcNow;
         var newListings = UpsertListings(incoming, existingMap, now);
 
-        if (newListings.Count > 0) _dbContext.Listings.AddRange(newListings);
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        if (newListings.Count > 0)
+        {
+            _dbContext.Listings.AddRange(newListings);
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
 
         return newListings;
     }

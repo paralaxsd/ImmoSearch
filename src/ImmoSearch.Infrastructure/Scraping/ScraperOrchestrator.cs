@@ -8,10 +8,16 @@ public sealed class ScraperOrchestrator(
     IListingRepository repository,
     IEnumerable<IScraper> scrapers)
 {
+    /******************************************************************************************
+     * FIELDS
+     * ***************************************************************************************/
     readonly ILogger<ScraperOrchestrator> _logger = logger;
     readonly IListingRepository _repository = repository;
     readonly IReadOnlyList<IScraper> _scrapers = scrapers.ToList();
 
+    /******************************************************************************************
+     * METHODS
+     * ***************************************************************************************/
     public async Task<IReadOnlyList<string>> RunOnceAsync(CancellationToken cancellationToken)
     {
         var aggregated = new List<Domain.Models.Listing>();
