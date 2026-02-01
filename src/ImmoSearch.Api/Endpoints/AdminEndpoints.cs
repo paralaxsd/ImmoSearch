@@ -31,6 +31,12 @@ public static class AdminEndpoints
             var zips = ZipCodeParser.TryParse(payload.ZipCode);
             if (zips is null) return Results.BadRequest("At least one valid ZIP code is required.");
             payload.ZipCode = zips.JoinedBy(",");
+            payload.TransferType = payload.TransferType?.Trim().ToLowerInvariant() switch
+            {
+                "buy" => "buy",
+                "rent" => "rent",
+                _ => string.Empty
+            };
 
             var saved = await repo.UpsertSettingsAsync(payload);
             return Results.Ok(saved);

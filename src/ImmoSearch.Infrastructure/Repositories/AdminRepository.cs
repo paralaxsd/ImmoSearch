@@ -32,6 +32,7 @@ public sealed class AdminRepository(ImmoContext dbContext) : IAdminRepository
         existing.PageSize = settings.PageSize;
         existing.IntervalSeconds = settings.IntervalSeconds;
         existing.UpdatedAt = DateTimeOffset.UtcNow;
+        existing.TransferType = settings.TransferType;
         await _dbContext.SaveChangesAsync(cancellationToken);
         return existing;
     }
