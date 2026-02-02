@@ -161,11 +161,14 @@ sealed class OevwScraper(HttpClient http, IScrapeSettingsProvider settingsProvid
         var size = subheading?.SelectSingleNode(".//li[contains(text(),'m²')]")?.InnerText.Trim().Replace(" m²", "").Replace(",", ".") ?? string.Empty;
         var textList = item.SelectSingleNode(".//div[contains(@class,'thumb__text')]//ul[contains(@class,'thumb__text__list')]");
         var rooms = textList?.SelectSingleNode(".//li[contains(text(),'Zimmer')]")?.InnerText.Trim().Replace(" Zimmer", "") ?? string.Empty;
+        var info = item.SelectSingleNode(".//div[contains(@class,'thumb__info small')]")?.InnerText.Trim();
+        var city = info?.Split('–').LastOrDefault()?.Trim() ?? string.Empty;
         return new Listing
         {
             Source = "oevw",
             ExternalId = url ?? string.Empty,
             Title = title ?? string.Empty,
+            City = city,
             Price = decimal.TryParse(price, NumberStyles.Any, CultureInfo.InvariantCulture, out var p) ? p : null,
             Size = decimal.TryParse(size, NumberStyles.Any, CultureInfo.InvariantCulture, out var s) ? s : null,
             Rooms = decimal.TryParse(rooms, NumberStyles.Any, CultureInfo.InvariantCulture, out var r) ? r : null,
